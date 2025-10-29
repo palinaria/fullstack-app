@@ -1,0 +1,33 @@
+.article-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.article-item {
+    border: 1px solid #000;
+    border-radius: 6px;
+    padding: 12px 16px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.article-item:hover {
+    background-color: #f3f3f3;
+    transform: translateY(-2px);
+}
+
+.article-item h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #000;
+    text-align: left;
+}
+
+.empty {
+    color: #555;
+    text-align: center;
+    font-style: italic;
+}
