@@ -1,0 +1,40 @@
+.article-view {
+    margin-top: 20px;
+}
+
+.article-view button {
+    background-color: #000;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.article-view button:hover {
+    background-color: #333;
+}
+
+.article-view h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 10px;
+}
+
+.article-view .content {
+    border: 1px solid #000;
+    border-radius: 4px;
+    padding: 15px;
+    background-color: #fff;
+    color: #000;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: 20px;
+}
+
+
+.article-view .edit-button-container {
+    margin-top: 10px;
+}
