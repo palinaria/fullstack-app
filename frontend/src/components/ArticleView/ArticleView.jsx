@@ -3,7 +3,6 @@ import './ArticleView.css';
 
 const ArticleView = ({ article, onBack }) => {
     if (!article) return null;
-
     return (
         <div className="article-view">
             <button onClick={onBack}>Back</button>

@@ -7,25 +7,37 @@ import './App.css';
 const App = () => {
   const [articles, setArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchArticles = async () => {
+    setLoading(true);
     try {
       const res = await fetch('http://localhost:3000/articles');
       const data = await res.json();
       setArticles(data);
     } catch (err) {
-      console.error('Ошибка при загрузке статей:', err);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSelectArticle = async (article) => {
+    setLoading(true);
     try {
       const res = await fetch(`http://localhost:3000/articles/${article.id}`);
       const data = await res.json();
       setSelectedArticle(data);
     } catch (err) {
-      console.error('Ошибка при загрузке статьи:', err);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleCreateArticle = async (newArticle) => {
+    setSelectedArticle(newArticle);
+    await fetchArticles();
   };
 
   useEffect(() => {
@@ -35,10 +47,11 @@ const App = () => {
   return (
       <div className="app-container">
         <h1>My Articles</h1>
-        {!selectedArticle && (
+        {loading && <p>Loading...</p>}
+        {!selectedArticle && !loading && (
             <>
               <ArticleList articles={articles} onSelect={handleSelectArticle} />
-              <ArticleForm onSubmit={fetchArticles} />
+              <ArticleForm onSubmit={handleCreateArticle} />
             </>
         )}
         {selectedArticle && (

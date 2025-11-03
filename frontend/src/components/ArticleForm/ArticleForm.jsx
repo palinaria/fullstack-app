@@ -4,13 +4,18 @@ import "./ArticleForm.css";
 const ArticleForm = ({ onSubmit }) => {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title.trim() || !content.trim()) {
-            alert("Введите заголовок и текст");
+            setError("Введите заголовок и текст");
             return;
         }
+
+        setSaving(true);
+        setError("");
 
         try {
             const res = await fetch('http://localhost:3000/articles', {
@@ -18,16 +23,17 @@ const ArticleForm = ({ onSubmit }) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title, content })
             });
-
             if (!res.ok) throw new Error('Ошибка при сохранении статьи');
-            await res.json();
 
-            onSubmit();
+            const data = await res.json();
             setTitle('');
             setContent('');
+            onSubmit(data);
         } catch (err) {
             console.error(err);
-            alert('Не удалось сохранить статью');
+            setError("Не удалось сохранить статью");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -36,6 +42,7 @@ const ArticleForm = ({ onSubmit }) => {
             <h2>Create Article</h2>
             <div className="underline"></div>
             <form onSubmit={handleSubmit}>
+                {error && <div className="form-error">{error}</div>}
                 <label>Title</label>
                 <input
                     type="text"
@@ -43,15 +50,15 @@ const ArticleForm = ({ onSubmit }) => {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                 />
-
                 <label>Content</label>
                 <textarea
                     placeholder="Write your content..."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                 ></textarea>
-
-                <button type="submit">Save</button>
+                <button type="submit" disabled={saving}>
+                    {saving ? 'Saving...' : 'Save'}
+                </button>
             </form>
         </div>
     );
