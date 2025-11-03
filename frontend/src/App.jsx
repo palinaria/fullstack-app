@@ -46,6 +46,22 @@ const App = () => {
     fetchArticles();
   };
 
+  const handleDeleteArticle = async (id) => {
+    const confirmDelete = window.confirm("Вы точно хотите удалить эту статью?");
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`http://localhost:3000/articles/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error("Ошибка при удалении статьи");
+
+      setSelectedArticle(null);
+      fetchArticles();
+    } catch (err) {
+      console.error(err);
+      alert("Не удалось удалить статью");
+    }
+  };
+
   useEffect(() => {
     fetchArticles();
   }, []);
@@ -74,6 +90,7 @@ const App = () => {
                 article={selectedArticle}
                 onBack={() => setSelectedArticle(null)}
                 onEdit={handleEditArticle}
+                onDelete={handleDeleteArticle}
             />
         )}
       </div>

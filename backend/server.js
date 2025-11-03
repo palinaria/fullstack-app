@@ -81,4 +81,18 @@ app.put('/articles/:id', (req, res) => {
         res.json(updatedArticle);
     });
 });
+app.delete('/articles/:id', (req, res) => {
+    const id = req.params.id;
+    const filePath = path.join(dataFolder, id + '.json');
 
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'Статья не найдена' });
+    }
+
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            return res.status(500).json({ message: 'Ошибка при удалении статьи' });
+        }
+        res.json({ message: 'Статья удалена' });
+    });
+});
