@@ -9,7 +9,7 @@ const ArticleForm = ({ onSubmit }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!title.trim() || !content.trim()) {
+        if (!title.trim() || !content) {
             setError("Введите заголовок и текст");
             return;
         }
