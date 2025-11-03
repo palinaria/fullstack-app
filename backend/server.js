@@ -60,3 +60,25 @@ app.post('/articles', (req, res) => {
 app.listen(PORT, () => {
     console.log('Сервер работает на http://localhost:' + PORT);
 });
+
+app.put('/articles/:id', (req, res) => {
+    const { id } = req.params;
+    const { title, content } = req.body;
+    const filePath = path.join(dataFolder, id + '.json');
+
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'Статья не найдена' });
+    }
+
+    if (!title || !content) {
+        return res.status(400).json({ message: 'Нужно ввести заголовок и текст' });
+    }
+
+    const updatedArticle = { id, title, content };
+
+    fs.writeFile(filePath, JSON.stringify(updatedArticle, null, 2), (err) => {
+        if (err) return res.status(500).json({ message: 'Ошибка при обновлении статьи' });
+        res.json(updatedArticle);
+    });
+});
+
