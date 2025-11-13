@@ -9,6 +9,7 @@ const App = () => {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [editingArticle, setEditingArticle] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -49,11 +50,9 @@ const App = () => {
   const handleDeleteArticle = async (id) => {
     const confirmDelete = window.confirm("Вы точно хотите удалить эту статью?");
     if (!confirmDelete) return;
-
     try {
       const res = await fetch(`http://localhost:3000/articles/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error("Ошибка при удалении статьи");
-
       setSelectedArticle(null);
       fetchArticles();
     } catch (err) {
@@ -63,14 +62,38 @@ const App = () => {
   };
 
   useEffect(() => {
-    fetchArticles();
+    const ws = new WebSocket('ws://localhost:3000');
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      setNotifications((prev) => [...prev, message]);
+      if (['article_created', 'article_updated', 'article_deleted'].includes(message.type)) {
+        fetchArticles();
+      }
+    };
+    return () => ws.close();
   }, []);
+
+  useEffect(() => {
+    if (notifications.length === 0) return;
+    const timer = setTimeout(() => {
+      setNotifications((prev) => prev.slice(1));
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [notifications]);
 
   return (
       <div className="app-container">
         <h1>My Articles</h1>
+        <div className="notifications">
+          {notifications.map((n, index) => (
+              <div key={index} className="notification">
+                {n.type === 'article_created' && `Новая статья: "${n.article.title}"`}
+                {n.type === 'article_updated' && `Статья обновлена: "${n.article.title}"`}
+                {n.type === 'article_deleted' && `Статья удалена (ID: ${n.id})`}
+              </div>
+          ))}
+        </div>
         {loading && <p>Loading...</p>}
-
         {!selectedArticle && !loading && (
             <>
               <ArticleList
@@ -84,7 +107,6 @@ const App = () => {
               />
             </>
         )}
-
         {selectedArticle && (
             <ArticleView
                 article={selectedArticle}

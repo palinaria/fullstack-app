@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import { WebSocketServer } from 'ws';
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
@@ -40,6 +41,21 @@ const upload = multer({
         }
     },
 });
+
+
+const server = app.listen(PORT, () => {
+    console.log('Сервер работает на http://localhost:' + PORT);
+});
+const wss = new WebSocketServer({ server });
+
+
+const broadcastNotification = (message) => {
+    wss.clients.forEach(client => {
+        if (client.readyState === 1) {
+            client.send(JSON.stringify(message));
+        }
+    });
+};
 
 app.get('/articles', (req, res) => {
     try {
@@ -84,10 +100,11 @@ app.post('/articles', upload.single('file'), (req, res) => {
     const newArticle = { id, title, content, file };
 
     try {
-        fs.writeFileSync(
-            path.join(dataFolder, id + '.json'),
-            JSON.stringify(newArticle, null, 2)
-        );
+        fs.writeFileSync(path.join(dataFolder, id + '.json'), JSON.stringify(newArticle, null, 2));
+
+
+        broadcastNotification({ type: 'article_created', article: newArticle });
+
         res.status(201).json(newArticle);
     } catch (err) {
         res.status(500).json({ message: 'Ошибка при сохранении статьи' });
@@ -113,6 +130,10 @@ app.put('/articles/:id', upload.single('file'), (req, res) => {
 
     try {
         fs.writeFileSync(filePath, JSON.stringify(updatedArticle, null, 2));
+
+
+        broadcastNotification({ type: 'article_updated', article: updatedArticle });
+
         res.json(updatedArticle);
     } catch (err) {
         res.status(500).json({ message: 'Ошибка при обновлении статьи' });
@@ -129,12 +150,12 @@ app.delete('/articles/:id', (req, res) => {
 
     try {
         fs.unlinkSync(filePath);
+
+
+        broadcastNotification({ type: 'article_deleted', id });
+
         res.json({ message: 'Статья удалена' });
     } catch (err) {
         res.status(500).json({ message: 'Ошибка при удалении статьи' });
     }
-});
-
-app.listen(PORT, () => {
-    console.log('Сервер работает на http://localhost:' + PORT);
 });
