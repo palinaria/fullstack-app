@@ -4,6 +4,7 @@ import "./ArticleForm.css";
 const ArticleForm = ({ onSubmit, articleToEdit }) => {
     const [title, setTitle] = useState(articleToEdit?.title || "");
     const [content, setContent] = useState(articleToEdit?.content || "");
+    const [file, setFile] = useState(null);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -24,10 +25,17 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
                 ? `http://localhost:3000/articles/${articleToEdit.id}`
                 : "http://localhost:3000/articles";
 
+
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("content", content);
+            if (file) {
+                formData.append("file", file);
+            }
+
             const res = await fetch(url, {
                 method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, content })
+                body: formData,
             });
 
             if (!res.ok) throw new Error("Ошибка при сохранении статьи");
@@ -35,6 +43,7 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
             onSubmit();
             setTitle("");
             setContent("");
+            setFile(null);
         } catch (err) {
             console.error(err);
             setError("Не удалось сохранить статью");
@@ -60,6 +69,12 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                 ></textarea>
+
+                <label>Прикрепить файл</label>
+                <input
+                    type="file"
+                    onChange={(e) => setFile(e.target.files[0])}
+                />
 
                 <button type="submit">Сохранить</button>
             </form>

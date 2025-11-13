@@ -23,6 +23,36 @@
     margin-bottom: 10px;
 }
 
+.article-view .attachments {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.article-view .attachment-image {
+    max-width: 300px;
+    max-height: 200px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.article-view .attachment-pdf {
+    display: inline-block;
+    background-color: #f0f0f0;
+    padding: 6px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #000;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.article-view .attachment-pdf:hover {
+    background-color: #ddd;
+}
+
 .article-view .content {
     border: 1px solid #000;
     border-radius: 4px;
@@ -34,7 +64,18 @@
     margin-bottom: 20px;
 }
 
-
 .article-view .edit-button-container {
     margin-top: 10px;
+}
+
+.article-view .edit-button {
+    margin-right: 10px;
+}
+
+.article-view .delete-button {
+    background-color: #c00;
+}
+
+.article-view .delete-button:hover {
+    background-color: #900;
 }

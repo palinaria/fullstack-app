@@ -3,20 +3,43 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
 
 const app = express();
 const PORT = 3000;
+
 const dataFolder = path.join(currentDir, 'data');
+const uploadFolder = path.join(currentDir, 'uploads');
+
+if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
+if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder);
 
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(uploadFolder));
 
-if (!fs.existsSync(dataFolder)) {
-    fs.mkdirSync(dataFolder);
-}
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadFolder),
+    filename: (req, file, cb) => {
+        const uniqueName = Date.now() + '-' + file.originalname;
+        cb(null, uniqueName);
+    },
+});
+
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Неверный формат файла. Разрешены JPG, PNG и PDF.'));
+        }
+    },
+});
 
 app.get('/articles', (req, res) => {
     try {
@@ -49,25 +72,29 @@ app.get('/articles/:id', (req, res) => {
     }
 });
 
-app.post('/articles', (req, res) => {
+app.post('/articles', upload.single('file'), (req, res) => {
     const { title, content } = req.body;
+    const file = req.file ? req.file.filename : null;
 
     if (!title || !content) {
         return res.status(400).json({ message: 'Нужно ввести заголовок и текст' });
     }
 
     const id = Date.now().toString();
-    const newArticle = { id, title, content };
+    const newArticle = { id, title, content, file };
 
     try {
-        fs.writeFileSync(path.join(dataFolder, id + '.json'), JSON.stringify(newArticle, null, 2));
+        fs.writeFileSync(
+            path.join(dataFolder, id + '.json'),
+            JSON.stringify(newArticle, null, 2)
+        );
         res.status(201).json(newArticle);
     } catch (err) {
         res.status(500).json({ message: 'Ошибка при сохранении статьи' });
     }
 });
 
-app.put('/articles/:id', (req, res) => {
+app.put('/articles/:id', upload.single('file'), (req, res) => {
     const id = req.params.id;
     const { title, content } = req.body;
     const filePath = path.join(dataFolder, id + '.json');
@@ -76,11 +103,13 @@ app.put('/articles/:id', (req, res) => {
         return res.status(404).json({ message: 'Статья не найдена' });
     }
 
-    if (!title || !content) {
-        return res.status(400).json({ message: 'Нужно ввести заголовок и текст' });
-    }
-
-    const updatedArticle = { id, title, content };
+    const oldData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    const updatedArticle = {
+        id,
+        title,
+        content,
+        file: req.file ? req.file.filename : oldData.file || null,
+    };
 
     try {
         fs.writeFileSync(filePath, JSON.stringify(updatedArticle, null, 2));
