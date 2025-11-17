@@ -61,22 +61,47 @@ const App = () => {
     }
   };
 
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:3000');
+
+    ws.onopen = () => {
+      console.log("WebSocket подключен");
+    };
+
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      setNotifications((prev) => [...prev, message]);
+      // Добавляем уведомление только если тип совпадает
       if (['article_created', 'article_updated', 'article_deleted'].includes(message.type)) {
-        fetchArticles();
+        setNotifications(prev => [...prev, message]);
       }
     };
-    return () => ws.close();
+
+    ws.onerror = (err) => {
+      console.error("WebSocket ошибка:", err);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket отключён");
+    };
+
+    return () => {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    };
   }, []);
+
 
   useEffect(() => {
     if (notifications.length === 0) return;
     const timer = setTimeout(() => {
-      setNotifications((prev) => prev.slice(1));
+      setNotifications(prev => prev.slice(1));
     }, 5000);
     return () => clearTimeout(timer);
   }, [notifications]);
@@ -84,6 +109,8 @@ const App = () => {
   return (
       <div className="app-container">
         <h1>My Articles</h1>
+
+
         <div className="notifications">
           {notifications.map((n, index) => (
               <div key={index} className="notification">
@@ -93,7 +120,9 @@ const App = () => {
               </div>
           ))}
         </div>
+
         {loading && <p>Loading...</p>}
+
         {!selectedArticle && !loading && (
             <>
               <ArticleList
@@ -107,6 +136,7 @@ const App = () => {
               />
             </>
         )}
+
         {selectedArticle && (
             <ArticleView
                 article={selectedArticle}
