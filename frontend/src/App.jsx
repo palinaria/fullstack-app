@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ArticleList from './components/ArticleList/ArticleList.jsx';
 import ArticleView from './components/ArticleView/ArticleView.jsx';
 import ArticleForm from './components/ArticleForm/ArticleForm.jsx';
@@ -10,6 +10,7 @@ const App = () => {
   const [editingArticle, setEditingArticle] = useState(null);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const wsRef = useRef(null);
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -61,42 +62,40 @@ const App = () => {
     }
   };
 
-
   useEffect(() => {
     fetchArticles();
   }, []);
 
-
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:3000');
+    if (!wsRef.current) {
+      const connectWebSocket = () => {
+        const ws = new WebSocket('ws://localhost:3000');
+        wsRef.current = ws;
 
-    ws.onopen = () => {
-      console.log("WebSocket подключен");
-    };
+        ws.onopen = () => console.log("WebSocket подключен");
 
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      // Добавляем уведомление только если тип совпадает
-      if (['article_created', 'article_updated', 'article_deleted'].includes(message.type)) {
-        setNotifications(prev => [...prev, message]);
-      }
-    };
+        ws.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          if (['article_created', 'article_updated', 'article_deleted'].includes(message.type)) {
+            setNotifications(prev => [...prev, message]);
+            fetchArticles();
+          }
+        };
 
-    ws.onerror = (err) => {
-      console.error("WebSocket ошибка:", err);
-    };
+        ws.onerror = (err) => console.error("WebSocket ошибка:", err);
 
-    ws.onclose = () => {
-      console.log("WebSocket отключён");
-    };
+        ws.onclose = () => {
+          console.log("WebSocket отключён, переподключение через 3 сек");
+          setTimeout(() => {
+            wsRef.current = null;
+            connectWebSocket();
+          }, 3000);
+        };
+      };
 
-    return () => {
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-        ws.close();
-      }
-    };
+      connectWebSocket();
+    }
   }, []);
-
 
   useEffect(() => {
     if (notifications.length === 0) return;
@@ -109,7 +108,6 @@ const App = () => {
   return (
       <div className="app-container">
         <h1>My Articles</h1>
-
 
         <div className="notifications">
           {notifications.map((n, index) => (
