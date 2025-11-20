@@ -4,13 +4,37 @@ import "./ArticleForm.css";
 const ArticleForm = ({ onSubmit, articleToEdit }) => {
     const [title, setTitle] = useState(articleToEdit?.title || "");
     const [content, setContent] = useState(articleToEdit?.content || "");
-    const [file, setFile] = useState(null);
+    const [files, setFiles] = useState([]);
     const [error, setError] = useState("");
+
+    const allowedExtensions = ["jpg", "jpeg", "png", "pdf"];
 
     useEffect(() => {
         setTitle(articleToEdit?.title || "");
         setContent(articleToEdit?.content || "");
+        setFiles([]);
+        setError("");
     }, [articleToEdit]);
+
+    const handleFileChange = (e) => {
+        const selectedFiles = Array.from(e.target.files);
+        const invalidFiles = selectedFiles.filter(file => {
+            const ext = file.name.split(".").pop().toLowerCase();
+            return !allowedExtensions.includes(ext);
+        });
+
+        if (invalidFiles.length > 0) {
+            setError(
+                `Неверный формат файлов: ${invalidFiles
+                    .map((f) => f.name)
+                    .join(", ")}`
+            );
+            return;
+        }
+
+        setError("");
+        setFiles(selectedFiles);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -25,28 +49,29 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
                 ? `http://localhost:3000/articles/${articleToEdit.id}`
                 : "http://localhost:3000/articles";
 
-
             const formData = new FormData();
             formData.append("title", title);
             formData.append("content", content);
-            if (file) {
-                formData.append("file", file);
-            }
+            files.forEach((file) => formData.append("files", file));
 
             const res = await fetch(url, {
                 method,
                 body: formData,
             });
 
-            if (!res.ok) throw new Error("Ошибка при сохранении статьи");
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.message || "Ошибка при сохранении статьи");
+            }
 
             onSubmit();
             setTitle("");
             setContent("");
-            setFile(null);
+            setFiles([]);
+            setError("");
         } catch (err) {
             console.error(err);
-            setError("Не удалось сохранить статью");
+            setError(err.message || "Не удалось сохранить статью");
         }
     };
 
@@ -70,10 +95,12 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
                     onChange={(e) => setContent(e.target.value)}
                 ></textarea>
 
-                <label>Прикрепить файл</label>
+                <label>Прикрепить файлы</label>
                 <input
                     type="file"
-                    onChange={(e) => setFile(e.target.files[0])}
+                    multiple
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={handleFileChange}
                 />
 
                 <button type="submit">Сохранить</button>

@@ -22,6 +22,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(uploadFolder));
 
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadFolder),
     filename: (req, file, cb) => {
@@ -30,10 +31,10 @@ const storage = multer.diskStorage({
     },
 });
 
+const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
 const upload = multer({
     storage,
     fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
@@ -47,7 +48,6 @@ const server = app.listen(PORT, () => {
 });
 
 const wss = new WebSocketServer({ server });
-
 const broadcastNotification = (message) => {
     wss.clients.forEach(client => {
         if (client.readyState === client.OPEN) {
@@ -56,6 +56,7 @@ const broadcastNotification = (message) => {
     });
 };
 
+// Получить все статьи
 app.get('/articles', (req, res) => {
     try {
         const files = fs.readdirSync(dataFolder);
@@ -68,6 +69,7 @@ app.get('/articles', (req, res) => {
     }
 });
 
+// Получить статью по ID
 app.get('/articles/:id', (req, res) => {
     const id = req.params.id;
     const filePath = path.join(dataFolder, id + '.json');
@@ -80,13 +82,15 @@ app.get('/articles/:id', (req, res) => {
     }
 });
 
-app.post('/articles', upload.single('file'), (req, res) => {
+// Создать статью с несколькими файлами
+app.post('/articles', upload.array('files'), (req, res) => {
     const { title, content } = req.body;
-    const file = req.file ? req.file.filename : null;
     if (!title || !content) return res.status(400).json({ message: 'Нужно ввести заголовок и текст' });
 
+    const files = req.files ? req.files.map(f => f.filename) : [];
     const id = Date.now().toString();
-    const newArticle = { id, title, content, file };
+    const newArticle = { id, title, content, files };
+
     try {
         fs.writeFileSync(path.join(dataFolder, id + '.json'), JSON.stringify(newArticle, null, 2));
         broadcastNotification({ type: 'article_created', article: newArticle });
@@ -96,18 +100,21 @@ app.post('/articles', upload.single('file'), (req, res) => {
     }
 });
 
-app.put('/articles/:id', upload.single('file'), (req, res) => {
+// Обновление статьи с несколькими файлами
+app.put('/articles/:id', upload.array('files'), (req, res) => {
     const id = req.params.id;
     const { title, content } = req.body;
     const filePath = path.join(dataFolder, id + '.json');
     if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Статья не найдена' });
 
     const oldData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    const newFiles = req.files ? req.files.map(f => f.filename) : oldData.files || [];
+
     const updatedArticle = {
         id,
         title,
         content,
-        file: req.file ? req.file.filename : oldData.file || null,
+        files: newFiles,
     };
 
     try {
@@ -119,6 +126,7 @@ app.put('/articles/:id', upload.single('file'), (req, res) => {
     }
 });
 
+// Удаление статьи
 app.delete('/articles/:id', (req, res) => {
     const id = req.params.id;
     const filePath = path.join(dataFolder, id + '.json');
