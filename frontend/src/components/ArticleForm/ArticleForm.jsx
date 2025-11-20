@@ -6,6 +6,7 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
     const [content, setContent] = useState(articleToEdit?.content || "");
     const [files, setFiles] = useState([]);
     const [error, setError] = useState("");
+    const [warning, setWarning] = useState("");
 
     const allowedExtensions = ["jpg", "jpeg", "png", "pdf"];
 
@@ -14,6 +15,7 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
         setContent(articleToEdit?.content || "");
         setFiles([]);
         setError("");
+        setWarning("");
     }, [articleToEdit]);
 
     const handleFileChange = (e) => {
@@ -24,12 +26,15 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
         });
 
         if (invalidFiles.length > 0) {
-            setError(`Неверный формат файлов: ${invalidFiles.map(f => f.name).join(", ")}`);
-            return;
+            setWarning(`!Внимание: выбранные файлы не будут прикреплены: ${invalidFiles.map(f => f.name).join(", ")}.   
+            Допустимые форматы файлов:"jpg", "jpeg", "png", "pdf"`);
+
+        } else {
+            setWarning("");
         }
 
-        setError("");
-        setFiles(selectedFiles);
+        const validFiles = selectedFiles.filter(file => allowedExtensions.includes(file.name.split(".").pop().toLowerCase()));
+        setFiles(validFiles);
     };
 
     const handleSubmit = async (e) => {
@@ -67,6 +72,7 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
             setContent("");
             setFiles([]);
             setError("");
+            setWarning("");
         } catch (err) {
             console.error(err);
             setError(err.message || "Не удалось сохранить статью");
@@ -77,6 +83,7 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
         <div className="form-container">
             <h2>{articleToEdit ? "Редактировать статью" : "Создать статью"}</h2>
             {error && <div className="form-error">{error}</div>}
+            {warning && <div className="form-warning">{warning}</div>}
             <form onSubmit={handleSubmit}>
                 <label>Title</label>
                 <input
