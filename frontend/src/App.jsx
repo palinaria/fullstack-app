@@ -43,9 +43,14 @@ const App = () => {
     setSelectedArticle(null);
   };
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = (updatedArticle) => {
     setEditingArticle(null);
-    fetchArticles();
+    if (selectedArticle && selectedArticle.id === updatedArticle.id) {
+      setSelectedArticle(prev => ({ ...prev, ...updatedArticle }));
+    }
+    setArticles(prevArticles =>
+        prevArticles.map(a => (a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a))
+    );
   };
 
   const handleDeleteArticle = async (id) => {
@@ -54,8 +59,10 @@ const App = () => {
     try {
       const res = await fetch(`http://localhost:3000/articles/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error("Ошибка при удалении статьи");
-      setSelectedArticle(null);
-      fetchArticles();
+      if (selectedArticle && selectedArticle.id === id) {
+        setSelectedArticle(null);
+      }
+      setArticles(prevArticles => prevArticles.filter(a => a.id !== id));
     } catch (err) {
       console.error(err);
       alert("Не удалось удалить статью");
@@ -78,14 +85,20 @@ const App = () => {
           const message = JSON.parse(event.data);
           if (['article_created', 'article_updated', 'article_deleted'].includes(message.type)) {
             setNotifications(prev => [...prev, message]);
-            fetchArticles();
+            if (message.type === 'article_created') {
+              setArticles(prev => [...prev, message.article]);
+            } else if (message.type === 'article_deleted') {
+              setArticles(prev => prev.filter(a => a.id !== message.id));
+              if (selectedArticle && selectedArticle.id === message.id) {
+                setSelectedArticle(null);
+              }
+            }
           }
         };
 
         ws.onerror = (err) => console.error("WebSocket ошибка:", err);
 
         ws.onclose = () => {
-          console.log("WebSocket отключён, переподключение через 3 сек");
           setTimeout(() => {
             wsRef.current = null;
             connectWebSocket();
@@ -95,7 +108,7 @@ const App = () => {
 
       connectWebSocket();
     }
-  }, []);
+  }, [selectedArticle]);
 
   useEffect(() => {
     if (notifications.length === 0) return;

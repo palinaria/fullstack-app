@@ -24,11 +24,7 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
         });
 
         if (invalidFiles.length > 0) {
-            setError(
-                `Неверный формат файлов: ${invalidFiles
-                    .map((f) => f.name)
-                    .join(", ")}`
-            );
+            setError(`Неверный формат файлов: ${invalidFiles.map(f => f.name).join(", ")}`);
             return;
         }
 
@@ -64,7 +60,9 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
                 throw new Error(data.message || "Ошибка при сохранении статьи");
             }
 
-            onSubmit();
+            const updatedArticle = await res.json();
+            onSubmit(updatedArticle);
+
             setTitle("");
             setContent("");
             setFiles([]);
