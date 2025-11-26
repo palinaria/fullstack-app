@@ -16,6 +16,7 @@ const App = () => {
     setLoading(true);
     try {
       const res = await fetch('http://localhost:3000/articles');
+      console.log('Response status:', res.status);
       const data = await res.json(); // получаем с бэка
       setArticles(data);
     } catch (err) {

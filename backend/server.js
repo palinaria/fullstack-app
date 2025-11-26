@@ -69,10 +69,19 @@ const Article = ArticleModel(sequelize);
     try {
         await sequelize.authenticate();
         console.log('Подключение к базе успешно!');
+
+        // создаём тестовую статью
+        const count = await Article.count();
+        if (count === 0) { // чтобы не создавать каждый раз при старте
+            await Article.create({ title: "Тестовая статья", content: "Текст" });
+            console.log('Тестовая статья создана');
+        }
+
     } catch (error) {
         console.error('Ошибка подключения к базе:', error);
     }
 })();
+
 
 
 const server = app.listen(PORT, () => {
