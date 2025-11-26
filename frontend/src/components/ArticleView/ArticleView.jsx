@@ -4,7 +4,7 @@ import './ArticleView.css';
 const ArticleView = ({ article, onBack, onEdit, onDelete }) => {
     if (!article) return null;
 
-    const files = Array.isArray(article.files) ? article.files : [];
+    const files = Array.isArray(article.files) ? article.files : [];//создаем file,чтобы можно было мэпиться
 
     return (
         <div className="article-view">
@@ -18,7 +18,7 @@ const ArticleView = ({ article, onBack, onEdit, onDelete }) => {
                         const fileUrl = `http://localhost:3000/uploads/${file}`;
                         const lower = file.toLowerCase();
 
-                        const isImage =
+                        const isImage =// Определяем тип файла
                             lower.endsWith('.jpg') ||
                             lower.endsWith('.jpeg') ||
                             lower.endsWith('.png');

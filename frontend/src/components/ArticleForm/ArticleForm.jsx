@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "./ArticleForm.css";
 
-const ArticleForm = ({ onSubmit, articleToEdit }) => {
-    const [title, setTitle] = useState(articleToEdit?.title || "");
+const ArticleForm = ({ onSubmit, articleToEdit }) => {//onSubmit — функция, которую вызовем после успешного сохранения/articleToEdit — статья, которую нужно редактировать
+    const [title, setTitle] = useState(articleToEdit?.title || "");//начальное значение/если есть название если нет создаем
     const [content, setContent] = useState(articleToEdit?.content || "");
-    const [files, setFiles] = useState([]);
+    const [files, setFiles] = useState([]);//массив выбранных файлов
     const [error, setError] = useState("");
     const [warning, setWarning] = useState("");
 
@@ -19,9 +19,9 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
     }, [articleToEdit]);
 
     const handleFileChange = (e) => {
-        const selectedFiles = Array.from(e.target.files);
-        const invalidFiles = selectedFiles.filter(file => {
-            const ext = file.name.split(".").pop().toLowerCase();
+        const selectedFiles = Array.from(e.target.files);//получаем все выбранные файлы в массив
+        const invalidFiles = selectedFiles.filter(file => {//берем те которые не подходят
+            const ext = file.name.split(".").pop().toLowerCase();//Разделяем имя файла по точке (split(".")) и берём последнее значение (pop()), т.е. расширение.
             return !allowedExtensions.includes(ext);
         });
 
@@ -33,11 +33,11 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
             setWarning("");
         }
 
-        const validFiles = selectedFiles.filter(file => allowedExtensions.includes(file.name.split(".").pop().toLowerCase()));
+        const validFiles = selectedFiles.filter(file => allowedExtensions.includes(file.name.split(".").pop().toLowerCase()));//отбираем только правильные файлы
         setFiles(validFiles);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {//БЭК!когда пользователь нажимает кнопку «Сохранить»
         e.preventDefault();
         if (!title || !content) {
             setError("Введите заголовок и текст");
@@ -45,19 +45,19 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
         }
 
         try {
-            const method = articleToEdit ? "PUT" : "POST";
+            const method = articleToEdit ? "PUT" : "POST";//articleToEdit есть → редактируем статью → метод "PUT".Если нет → создаём новую → метод "POST".
             const url = articleToEdit
                 ? `http://localhost:3000/articles/${articleToEdit.id}`
-                : "http://localhost:3000/articles";
+                : "http://localhost:3000/articles";//редактируем существующую или создаем
 
-            const formData = new FormData();
+            const formData = new FormData();//через него отдаем на сервер наши артикли
             formData.append("title", title);
             formData.append("content", content);
             files.forEach((file) => formData.append("files", file));
 
             const res = await fetch(url, {
-                method,
-                body: formData,
+                method,//post или put
+                body: formData,//вот здесь
             });
 
             if (!res.ok) {
@@ -65,10 +65,10 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {
                 throw new Error(data.message || "Ошибка при сохранении статьи");
             }
 
-            const updatedArticle = await res.json();
-            onSubmit(updatedArticle);
+            const updatedArticle = await res.json();//ответ от бэка
+            onSubmit(updatedArticle);//ОБНОВЛЯЕМ ИНТЕРФЕЙС С ПОЛУЧЕННОЙ ДАТОЙ
 
-            setTitle("");
+            setTitle("");//возвращаем в исходное состояние
             setContent("");
             setFiles([]);
             setError("");
