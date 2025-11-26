@@ -3,44 +3,77 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
+import { WebSocketServer } from 'ws';
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
 
 const app = express();
 const PORT = 3000;
+
 const dataFolder = path.join(currentDir, 'data');
+const uploadFolder = path.join(currentDir, 'uploads');
+
+if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
+if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder);
 
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(uploadFolder));
 
-if (!fs.existsSync(dataFolder)) {
-    fs.mkdirSync(dataFolder);
-}
 
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadFolder),
+    filename: (req, file, cb) => {
+        const uniqueName = Date.now() + '-' + file.originalname;
+        cb(null, uniqueName);
+    },
+});
+
+const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Неверный формат файла. Разрешены JPG, PNG и PDF.'));
+        }
+    },
+});
+
+const server = app.listen(PORT, () => {
+    console.log('Сервер работает на http://localhost:' + PORT);
+});
+
+const wss = new WebSocketServer({ server });
+const broadcastNotification = (message) => {
+    wss.clients.forEach(client => {
+        if (client.readyState === client.OPEN) {
+            client.send(JSON.stringify(message));
+        }
+    });
+};
+
+// Получить все статьи
 app.get('/articles', (req, res) => {
     try {
         const files = fs.readdirSync(dataFolder);
         const articles = files
             .filter(file => file.endsWith('.json'))
-            .map(file => {
-                const content = fs.readFileSync(path.join(dataFolder, file), 'utf-8');
-                return JSON.parse(content);
-            });
+            .map(file => JSON.parse(fs.readFileSync(path.join(dataFolder, file), 'utf-8')));
         res.json(articles);
     } catch (err) {
         res.status(500).json({ message: 'Ошибка при чтении папки' });
     }
 });
 
+// Получить статью по ID
 app.get('/articles/:id', (req, res) => {
     const id = req.params.id;
     const filePath = path.join(dataFolder, id + '.json');
-
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ message: 'Статья не найдена' });
-    }
-
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Статья не найдена' });
     try {
         const data = fs.readFileSync(filePath, 'utf-8');
         res.json(JSON.parse(data));
@@ -49,63 +82,61 @@ app.get('/articles/:id', (req, res) => {
     }
 });
 
-app.post('/articles', (req, res) => {
+// Создать статью с несколькими файлами
+app.post('/articles', upload.array('files'), (req, res) => {
     const { title, content } = req.body;
+    if (!title || !content) return res.status(400).json({ message: 'Нужно ввести заголовок и текст' });
 
-    if (!title || !content) {
-        return res.status(400).json({ message: 'Нужно ввести заголовок и текст' });
-    }
-
+    const files = req.files ? req.files.map(f => f.filename) : [];
     const id = Date.now().toString();
-    const newArticle = { id, title, content };
+    const newArticle = { id, title, content, files };
 
     try {
         fs.writeFileSync(path.join(dataFolder, id + '.json'), JSON.stringify(newArticle, null, 2));
+        broadcastNotification({ type: 'article_created', article: newArticle });
         res.status(201).json(newArticle);
     } catch (err) {
         res.status(500).json({ message: 'Ошибка при сохранении статьи' });
     }
 });
 
-app.put('/articles/:id', (req, res) => {
+// Обновление статьи с несколькими файлами
+app.put('/articles/:id', upload.array('files'), (req, res) => {
     const id = req.params.id;
     const { title, content } = req.body;
     const filePath = path.join(dataFolder, id + '.json');
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Статья не найдена' });
 
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ message: 'Статья не найдена' });
-    }
+    const oldData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    const newFiles = req.files ? req.files.map(f => f.filename) : oldData.files || [];
 
-    if (!title || !content) {
-        return res.status(400).json({ message: 'Нужно ввести заголовок и текст' });
-    }
-
-    const updatedArticle = { id, title, content };
+    const updatedArticle = {
+        id,
+        title,
+        content,
+        files: newFiles,
+    };
 
     try {
         fs.writeFileSync(filePath, JSON.stringify(updatedArticle, null, 2));
+        broadcastNotification({ type: 'article_updated', article: updatedArticle });
         res.json(updatedArticle);
     } catch (err) {
         res.status(500).json({ message: 'Ошибка при обновлении статьи' });
     }
 });
 
+// Удаление статьи
 app.delete('/articles/:id', (req, res) => {
     const id = req.params.id;
     const filePath = path.join(dataFolder, id + '.json');
-
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ message: 'Статья не найдена' });
-    }
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Статья не найдена' });
 
     try {
         fs.unlinkSync(filePath);
+        broadcastNotification({ type: 'article_deleted', id });
         res.json({ message: 'Статья удалена' });
     } catch (err) {
         res.status(500).json({ message: 'Ошибка при удалении статьи' });
     }
-});
-
-app.listen(PORT, () => {
-    console.log('Сервер работает на http://localhost:' + PORT);
 });
