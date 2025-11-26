@@ -10,13 +10,13 @@ const App = () => {
   const [editingArticle, setEditingArticle] = useState(null);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const wsRef = useRef(null);//хранение WebSocket-соединенияхранение WebSocket-соединения
+  const wsRef = useRef(null); // хранение WebSocket-соединения
 
   const fetchArticles = async () => {
     setLoading(true);
     try {
       const res = await fetch('http://localhost:3000/articles');
-      const data = await res.json();//получаем с бэка
+      const data = await res.json(); // получаем с бэка
       setArticles(data);
     } catch (err) {
       console.error(err);
@@ -40,19 +40,20 @@ const App = () => {
 
   const handleEditArticle = (article) => {
     setEditingArticle(article);
-    setSelectedArticle(null);//переключает интерфейс на "форму редактирования статьи"
+    setSelectedArticle(null); // переключает интерфейс на "форму редактирования статьи"
   };
 
-
-  //вызывается, когда пользователь закончил редактировать статью и нажал "Сохранить".
+  // вызывается, когда пользователь закончил редактировать статью и нажал "Сохранить"
   const handleFormSubmit = (updatedArticle) => {
-    setEditingArticle(null);//Мы больше не редактируем статью
-    if (selectedArticle && selectedArticle.id === updatedArticle.id) {//“Если сейчас на экране открыта эта же статья, которую мы обновили — нужно обновить её прямо в окне просмотра”
+    setEditingArticle(null); // Мы больше не редактируем статью
+    if (selectedArticle && selectedArticle.id === updatedArticle.id) {
+      // Если сейчас на экране открыта эта же статья, которую мы обновили — нужно обновить её прямо в окне просмотра
       setSelectedArticle(prev => ({ ...prev, ...updatedArticle }));
     }
     setArticles(prevArticles =>
-        prevArticles.map(a => (a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a))//Если найдёшь статью с таким же id — обнови её.
-    //Если нет — оставь как есть.
+        prevArticles.map(a =>
+            a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a
+        ) // Если найдёшь статью с таким же id — обнови её. Если нет — оставь как есть.
     );
   };
 
@@ -62,10 +63,12 @@ const App = () => {
     try {
       const res = await fetch(`http://localhost:3000/articles/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error("Ошибка при удалении статьи");
-      if (selectedArticle && selectedArticle.id === id) {//Если да, значит пользователь смотрит статью, которую удаляем.
-        setSelectedArticle(null);//закрываем окно просмотра этой статьи, чтобы не показывать уже удалённый контент.
+      if (selectedArticle && selectedArticle.id === id) {
+        // Если да, значит пользователь смотрит статью, которую удаляем
+        setSelectedArticle(null); // закрываем окно просмотра этой статьи, чтобы не показывать уже удалённый контент
       }
-      setArticles(prevArticles => prevArticles.filter(a => a.id !== id));//filter оставляет только те статьи, у которых id НЕ равно удаляемому.
+      setArticles(prevArticles => prevArticles.filter(a => a.id !== id));
+      // filter оставляет только те статьи, у которых id НЕ равно удаляемому
     } catch (err) {
       console.error(err);
       alert("Не удалось удалить статью");
@@ -74,25 +77,29 @@ const App = () => {
 
   useEffect(() => {
     fetchArticles();
-  }, []);//1 раз при загрузке
+  }, []); // 1 раз при загрузке
 
   useEffect(() => {
-    if (!wsRef.current) { //Проверяем, подключён ли WebSocket
+    if (!wsRef.current) { // Проверяем, подключён ли WebSocket
       const connectWebSocket = () => {
         const ws = new WebSocket('ws://localhost:3000');
         wsRef.current = ws;
 
         ws.onopen = () => console.log("WebSocket подключен");
 
-        ws.onmessage = (event) => {//срабатывает, когда сервер присылает сообщение.
+        ws.onmessage = (event) => {
+          // срабатывает, когда сервер присылает сообщение
           const message = JSON.parse(event.data);
           if (['article_created', 'article_updated', 'article_deleted'].includes(message.type)) {
-            setNotifications(prev => [...prev, message]);//создаём новый массив, в котором:сначала старые уведомления из prev потом новое уведомление message
+            setNotifications(prev => [...prev, message]);
+            // создаём новый массив: сначала старые уведомления из prev, потом новое уведомление message
+
             if (message.type === 'article_created') {
               setArticles(prev => [...prev, message.article]);
             } else if (message.type === 'article_deleted') {
               setArticles(prev => prev.filter(a => a.id !== message.id));
-              if (selectedArticle && selectedArticle.id === message.id) {//Если пользователь сейчас смотрит статью, которую удалили
+              if (selectedArticle && selectedArticle.id === message.id) {
+                // Если пользователь сейчас смотрит статью, которую удалили
                 setSelectedArticle(null);
               }
             }
@@ -101,11 +108,12 @@ const App = () => {
 
         ws.onerror = (err) => console.error("WebSocket ошибка:", err);
 
-        ws.onclose = () => {//Срабатывает, когда сервер закрыл соединение или соединение прервалось.
+        ws.onclose = () => {
+          // Срабатывает, когда сервер закрыл соединение или соединение прервалось
           setTimeout(() => {
-            wsRef.current = null;//обнуляем ссылку на старый WebSocket
-            connectWebSocket();// заново создаём соединение WebSocket с сервером.
-          }, 3000);//если соединение оборвалось, мы автоматически переподключаемся через 3 секунды,
+            wsRef.current = null; // обнуляем ссылку на старый WebSocket
+            connectWebSocket(); // заново создаём соединение WebSocket с сервером
+          }, 3000); // если соединение оборвалось, автоматически переподключаемся через 3 секунды
         };
       };
 
@@ -113,12 +121,11 @@ const App = () => {
     }
   }, [selectedArticle]);
 
-
-  //каждое уведомление отображается 5 секунд, а потом исчезает
+  // каждое уведомление отображается 5 секунд, а потом исчезает
   useEffect(() => {
-    if (notifications.length === 0) return; //Если нет уведомлений, то ничего не делаем и выходим
+    if (notifications.length === 0) return; // Если нет уведомлений, то ничего не делаем и выходим
     const timer = setTimeout(() => {
-      setNotifications(prev => prev.slice(1));//создаёт новый массив без первого элемента.
+      setNotifications(prev => prev.slice(1)); // создаёт новый массив без первого элемента
     }, 5000);
     return () => clearTimeout(timer);
   }, [notifications]);
@@ -139,7 +146,8 @@ const App = () => {
 
         {loading && <p>Loading...</p>}
 
-        {!selectedArticle && !loading && (//если нет выбранной статьи,то данные не загружаются
+        {!selectedArticle && !loading && (
+            // если нет выбранной статьи,то данные не загружаются
             <>
               <ArticleList
                   articles={articles}
@@ -147,7 +155,7 @@ const App = () => {
                   onEdit={handleEditArticle}
               />
               <ArticleForm
-                  onSubmit={handleFormSubmit}//handleSubmit выше
+                  onSubmit={handleFormSubmit} // handleSubmit выше
                   articleToEdit={editingArticle}
               />
             </>
