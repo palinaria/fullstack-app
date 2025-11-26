@@ -1,34 +1,26 @@
 import { Model, DataTypes } from 'sequelize';
+import { sequelize } from '../services/db.js';
 
-export default (sequelize) => {
-  class Article extends Model {
+export class Article extends Model {}
 
-    static associate(models) {
-
-    }
-  }
-
-  Article.init(
-      {
+Article.init(
+    {
         title: {
-          type: DataTypes.STRING,
-          allowNull: false
+            type: DataTypes.STRING,
+            allowNull: false
         },
         content: {
-          type: DataTypes.TEXT,
-          allowNull: false
+            type: DataTypes.TEXT,
+            allowNull: false
         },
         files: {
-          type: DataTypes.JSON,
-          allowNull: true,
-          defaultValue: []
+            type: DataTypes.JSON,
+            allowNull: true,
+            defaultValue: []
         }
-      },
-      {
+    },
+    {
         sequelize,
-        modelName: 'Article',
-      }
-  );
-
-  return Article;
-};
+        modelName: 'Article'
+    }
+);
