@@ -1,0 +1,8 @@
+[33m27210f8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mhw-1[m[33m, [m[1;31morigin/hw-1[m[33m)[m fix:fix gitignor file and add error messages
+[33m9eebb5b[m Remove node_modules from repo
+[33m4fd9cd1[m feat:frontend and readme file are implemented
+[33mb48f82d[m feat:frontend and readme file are implemented
+[33m7fe5f72[m feat:frontend and readme file are implemented
+[33m174b877[m feat:frontend and readme file are implemented
+[33ma49f64c[m feat:backend is implemented
+[33mbe6867e[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m Initial commit: frontend + backend setup

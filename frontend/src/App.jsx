@@ -10,13 +10,14 @@ const App = () => {
   const [editingArticle, setEditingArticle] = useState(null);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const wsRef = useRef(null);
+  const wsRef = useRef(null); // хранение WebSocket-соединения
 
   const fetchArticles = async () => {
     setLoading(true);
     try {
       const res = await fetch('http://localhost:3000/articles');
-      const data = await res.json();
+      console.log('Response status:', res.status);
+      const data = await res.json(); // получаем с бэка
       setArticles(data);
     } catch (err) {
       console.error(err);
@@ -40,16 +41,20 @@ const App = () => {
 
   const handleEditArticle = (article) => {
     setEditingArticle(article);
-    setSelectedArticle(null);
+    setSelectedArticle(null); // переключает интерфейс на "форму редактирования статьи"
   };
 
+  // вызывается, когда пользователь закончил редактировать статью и нажал "Сохранить"
   const handleFormSubmit = (updatedArticle) => {
-    setEditingArticle(null);
+    setEditingArticle(null); // Мы больше не редактируем статью
     if (selectedArticle && selectedArticle.id === updatedArticle.id) {
+      // Если сейчас на экране открыта эта же статья, которую мы обновили — нужно обновить её прямо в окне просмотра
       setSelectedArticle(prev => ({ ...prev, ...updatedArticle }));
     }
     setArticles(prevArticles =>
-        prevArticles.map(a => (a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a))
+        prevArticles.map(a =>
+            a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a
+        ) // Если найдёшь статью с таким же id — обнови её. Если нет — оставь как есть.
     );
   };
 
@@ -60,9 +65,11 @@ const App = () => {
       const res = await fetch(`http://localhost:3000/articles/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error("Ошибка при удалении статьи");
       if (selectedArticle && selectedArticle.id === id) {
-        setSelectedArticle(null);
+        // Если да, значит пользователь смотрит статью, которую удаляем
+        setSelectedArticle(null); // закрываем окно просмотра этой статьи, чтобы не показывать уже удалённый контент
       }
       setArticles(prevArticles => prevArticles.filter(a => a.id !== id));
+      // filter оставляет только те статьи, у которых id НЕ равно удаляемому
     } catch (err) {
       console.error(err);
       alert("Не удалось удалить статью");
@@ -71,10 +78,10 @@ const App = () => {
 
   useEffect(() => {
     fetchArticles();
-  }, []);
+  }, []); // 1 раз при загрузке
 
   useEffect(() => {
-    if (!wsRef.current) {
+    if (!wsRef.current) { // Проверяем, подключён ли WebSocket
       const connectWebSocket = () => {
         const ws = new WebSocket('ws://localhost:3000');
         wsRef.current = ws;
@@ -82,14 +89,18 @@ const App = () => {
         ws.onopen = () => console.log("WebSocket подключен");
 
         ws.onmessage = (event) => {
+          // срабатывает, когда сервер присылает сообщение
           const message = JSON.parse(event.data);
           if (['article_created', 'article_updated', 'article_deleted'].includes(message.type)) {
             setNotifications(prev => [...prev, message]);
+            // создаём новый массив: сначала старые уведомления из prev, потом новое уведомление message
+
             if (message.type === 'article_created') {
               setArticles(prev => [...prev, message.article]);
             } else if (message.type === 'article_deleted') {
               setArticles(prev => prev.filter(a => a.id !== message.id));
               if (selectedArticle && selectedArticle.id === message.id) {
+                // Если пользователь сейчас смотрит статью, которую удалили
                 setSelectedArticle(null);
               }
             }
@@ -99,10 +110,11 @@ const App = () => {
         ws.onerror = (err) => console.error("WebSocket ошибка:", err);
 
         ws.onclose = () => {
+          // Срабатывает, когда сервер закрыл соединение или соединение прервалось
           setTimeout(() => {
-            wsRef.current = null;
-            connectWebSocket();
-          }, 3000);
+            wsRef.current = null; // обнуляем ссылку на старый WebSocket
+            connectWebSocket(); // заново создаём соединение WebSocket с сервером
+          }, 3000); // если соединение оборвалось, автоматически переподключаемся через 3 секунды
         };
       };
 
@@ -110,10 +122,11 @@ const App = () => {
     }
   }, [selectedArticle]);
 
+  // каждое уведомление отображается 5 секунд, а потом исчезает
   useEffect(() => {
-    if (notifications.length === 0) return;
+    if (notifications.length === 0) return; // Если нет уведомлений, то ничего не делаем и выходим
     const timer = setTimeout(() => {
-      setNotifications(prev => prev.slice(1));
+      setNotifications(prev => prev.slice(1)); // создаёт новый массив без первого элемента
     }, 5000);
     return () => clearTimeout(timer);
   }, [notifications]);
@@ -135,6 +148,7 @@ const App = () => {
         {loading && <p>Loading...</p>}
 
         {!selectedArticle && !loading && (
+            // если нет выбранной статьи,то данные не загружаются
             <>
               <ArticleList
                   articles={articles}
@@ -142,7 +156,7 @@ const App = () => {
                   onEdit={handleEditArticle}
               />
               <ArticleForm
-                  onSubmit={handleFormSubmit}
+                  onSubmit={handleFormSubmit} // handleSubmit выше
                   articleToEdit={editingArticle}
               />
             </>
