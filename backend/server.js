@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import multer from 'multer'; // загрузка файлов,картинок с фронта
 import { WebSocketServer } from 'ws';
 import { Sequelize } from 'sequelize';
-import ArticleModel from '../models/article.js';
+import ArticleModel from './models/article.js';
 
 
 const configPath = path.join(process.cwd(), 'config', 'config.json');
