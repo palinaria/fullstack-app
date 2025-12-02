@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { sequelize } from './services/db.js'; // подключение к БД
 import { Article } from './models/article.js'; // модель Article
 import articleRouter from './controllers/articleController.js'; // роуты для статей
-import { setupWebSocket } from './utils/websocket.js'; // WS сервер
+import { setupWebSocket } from './utils/ws.js'; // WS сервер
 
 // Получаем текущую директорию
 const currentFile = fileURLToPath(import.meta.url);

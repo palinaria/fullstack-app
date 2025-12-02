@@ -1,7 +1,7 @@
 import express from 'express';
 import { Article } from '../models/article.js';
 import { upload } from '../services/fileService.js';
-import { broadcastNotification } from '../utils/websocket.js';
+import { broadcastNotification } from '../utils/ws.js';
 
 const router = express.Router();
 

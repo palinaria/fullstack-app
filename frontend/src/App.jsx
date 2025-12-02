@@ -4,6 +4,16 @@ import ArticleView from './components/ArticleView/ArticleView.jsx';
 import ArticleForm from './components/ArticleForm/ArticleForm.jsx';
 import './App.css';
 
+//срабатывает app.jsx
+//wsRef – реф для хранения WebSocket
+//Загрузка списка статей
+// Выполняется useEffect(() => fetchArticles(), []).
+//ws
+//Пользователь кликает на статью в списке.
+// handleSelectArticle делает GET-запрос к /articles/:id.
+// Сервер возвращает статью → React устанавливает selectedArticle.
+// Рендерится компонент <ArticleView />.
+
 const App = () => {
   const [articles, setArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -148,15 +158,15 @@ const App = () => {
         {loading && <p>Loading...</p>}
 
         {!selectedArticle && !loading && (
-            // если нет выбранной статьи,то данные не загружаются
+
             <>
               <ArticleList
-                  articles={articles}
-                  onSelect={handleSelectArticle}
+                  articles={articles}// если нет выбранной статьи,то данные не загружаются
+                  onSelect={handleSelectArticle}//!! get запрос
                   onEdit={handleEditArticle}
               />
               <ArticleForm
-                  onSubmit={handleFormSubmit} // handleSubmit выше
+                  onSubmit={handleFormSubmit} // POST-запрос к /articles
                   articleToEdit={editingArticle}
               />
             </>

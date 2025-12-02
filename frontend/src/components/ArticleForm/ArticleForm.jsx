@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./ArticleForm.css";
-
+//создание или редактирование статьи
 const ArticleForm = ({ onSubmit, articleToEdit }) => {//onSubmit — функция, которую вызовем после успешного сохранения/articleToEdit — статья, которую нужно редактировать
     const [title, setTitle] = useState(articleToEdit?.title || "");//начальное значение/если есть название если нет создаем
     const [content, setContent] = useState(articleToEdit?.content || "");
@@ -77,7 +77,7 @@ const ArticleForm = ({ onSubmit, articleToEdit }) => {//onSubmit — функц�
             console.error(err);
             setError(err.message || "Не удалось сохранить статью");
         }
-    };
+    };//если article есть мы редактируем если нет создаем
 
     return (
         <div className="form-container">

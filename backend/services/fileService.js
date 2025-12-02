@@ -3,6 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
+//Middle aware
+
 // Получаем текущую директорию
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
