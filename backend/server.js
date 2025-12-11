@@ -7,6 +7,9 @@ import { sequelize } from './services/db.js'; // подключение к БД
 import { Article } from './models/article.js'; // модель Article
 import articleRouter from './controllers/articleController.js'; // роуты для статей
 import { setupWebSocket } from './utils/ws.js'; // WS сервер
+import commentRoutes from "./routes/commentRoutes.js";
+
+
 
 // Получаем текущую директорию
 const currentFile = fileURLToPath(import.meta.url);
@@ -22,6 +25,7 @@ if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder);
 app.use(cors()); // разрешаем фронту делать запросы
 app.use(express.json()); // чтобы Express понимал JSON
 app.use('/uploads', express.static(uploadFolder)); // отдаём файлы
+app.use("/comments", commentRoutes);
 
 // Подключаем роуты для статей
 app.use('/articles', articleRouter);

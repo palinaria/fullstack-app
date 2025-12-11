@@ -1,0 +1,36 @@
+.comment-form {
+    display: flex;
+    flex-direction: column;
+    margin: 10px 0;
+}
+
+.comment-form textarea {
+    resize: vertical;
+    min-height: 60px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.comment-form button {
+    width: 100px;
+    padding: 6px 10px;
+    margin-right: 5px;
+    margin-top: 5px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #4caf50;
+    color: white;
+}
+
+.comment-form button[type="button"] {
+    background-color: #f44336;
+}
+
+.comment-form button:hover {
+    opacity: 0.9;
+}

@@ -1,0 +1,41 @@
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+}
+
+.comment-item {
+    border-bottom: 1px solid #ccc;
+    padding: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.comment-item p {
+    margin: 0;
+    flex: 1;
+}
+
+.comment-item button {
+    margin-left: 5px;
+    padding: 4px 8px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.comment-item button:first-of-type {
+    background-color: #2196f3;
+    color: white;
+}
+
+.comment-item button:last-of-type {
+    background-color: #f44336;
+    color: white;
+}
+
+.comment-item button:hover {
+    opacity: 0.8;
+}
