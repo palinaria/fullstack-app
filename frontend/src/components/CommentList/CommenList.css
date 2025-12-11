@@ -18,24 +18,19 @@
 }
 
 .comment-item button {
-    margin-left: 5px;
-    padding: 4px 8px;
-    font-size: 12px;
-    border: none;
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    border: 1px solid #000;
+    font-weight: bold;
     cursor: pointer;
+    margin-left: 10px;
+    background-color: #fff;
+    color: #000;
+    transition: all 0.2s ease;
 }
 
-.comment-item button:first-of-type {
-    background-color: #2196f3;
-    color: white;
-}
-
-.comment-item button:last-of-type {
-    background-color: #f44336;
-    color: white;
-}
-
-.comment-item button:hover {
-    opacity: 0.8;
+.comment-item button:hover,
+.comment-item button:active {
+    background-color: #000;
+    color: #fff;
 }

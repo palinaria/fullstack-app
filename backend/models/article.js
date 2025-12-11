@@ -1,7 +1,9 @@
+
 import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../services/db.js';
 
 export class Article extends Model {}
+
 
 Article.init(
     {
@@ -17,6 +19,12 @@ Article.init(
             type: DataTypes.JSON,
             allowNull: true,
             defaultValue: []
+        },
+
+
+        workspaceId: {
+            type: DataTypes.INTEGER,
+            allowNull: false
         }
     },
     {

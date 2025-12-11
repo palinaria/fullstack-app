@@ -1,15 +1,13 @@
-.article-form {
-    padding-top: 20px;
-    margin-top: 40px;
-    width: 400px;
-    margin: 20px auto;
+.workspace-form-container {
     padding: 20px;
+    margin: 20px auto;
+    width: 400px;
     border: 1px solid #ccc;
     border-radius: 12px;
     background-color: #f9f9f9;
 }
 
-.article-form h2 {
+.workspace-form-container h2 {
     font-size: 20px;
     font-weight: 600;
     color: #000;
@@ -17,8 +15,8 @@
 }
 
 .underline {
-    height: 2px;
     width: 50px;
+    height: 2px;
     background-color: #333;
     margin-bottom: 20px;
 }
@@ -26,23 +24,25 @@
 form {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 20px;
+}
+
+label {
+    font-weight: 500;
+    color: #000;
+    margin-bottom: 5px;
 }
 
 input,
-textarea {
-    border: 1px solid #000;
-    border-radius: 4px;
+textarea,
+select {
+    width: 100%;
     padding: 10px;
     font-size: 16px;
-    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #000;
     background-color: #fff;
     color: #000;
-}
-
-textarea {
-    min-height: 120px;
-    resize: vertical;
 }
 
 button {
@@ -61,34 +61,14 @@ button:last-of-type {
     margin-right: 0;
 }
 
-/* Ховер и нажатие для всех кнопок формы */
 button:hover,
-button:focus,
 button:active {
-    background-color: #000 !important;
-    color: #fff !important;
+    background-color: #000;
+    color: #fff;
 }
 
 button:disabled {
     background-color: #999;
     color: #eee;
     cursor: not-allowed;
-}
-
-.form-error {
-    background-color: #ffe0e0;
-    color: #d8000c;
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin-bottom: 12px;
-    font-size: 14px;
-}
-
-.form-warning {
-    background-color: #fff4e5;
-    color: #b35000;
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin-bottom: 12px;
-    font-size: 14px;
 }

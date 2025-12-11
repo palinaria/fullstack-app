@@ -15,22 +15,23 @@
 }
 
 .comment-form button {
-    width: 100px;
-    padding: 6px 10px;
-    margin-right: 5px;
-    margin-top: 5px;
-    font-size: 14px;
-    border: none;
-    border-radius: 5px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    border: 1px solid #000;
+    font-weight: bold;
     cursor: pointer;
-    background-color: #4caf50;
-    color: white;
+    margin-right: 10px;
+    background-color: #fff;
+    color: #000;
+    transition: all 0.2s ease;
 }
 
-.comment-form button[type="button"] {
-    background-color: #f44336;
+.comment-form button:last-of-type {
+    margin-right: 0;
 }
 
-.comment-form button:hover {
-    opacity: 0.9;
+.comment-form button:hover,
+.comment-form button:active {
+    background-color: #000;
+    color: #fff;
 }

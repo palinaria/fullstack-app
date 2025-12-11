@@ -1,19 +1,22 @@
-import { DataTypes } from "sequelize";
-import { sequelize } from "../services/db.js";
 
-const Workspace = sequelize.define("Workspace", {
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false,
+import { Model, DataTypes } from 'sequelize';
+import { sequelize } from '../services/db.js';
+
+export class Workspace extends Model {}
+
+Workspace.init(
+    {
+        name: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        description: {
+            type: DataTypes.TEXT,
+            allowNull: true
+        }
     },
-    description: {
-        type: DataTypes.TEXT,
-    },
-    workspaceId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
+    {
+        sequelize,
+        modelName: 'Workspace'
     }
-
-});
-
-module.exports = Workspace;
+);
