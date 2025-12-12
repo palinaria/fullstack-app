@@ -1,4 +1,4 @@
-import express from 'express';
+
 import { Article } from '../models/article.js';
 import { Comment } from '../models/comment.js';
 import { upload } from '../services/fileService.js';

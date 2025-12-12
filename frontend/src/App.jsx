@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import ArticleList from './components/ArticleList/ArticleList.jsx';
 import ArticleView from './components/ArticleView/ArticleView.jsx';
@@ -14,7 +13,6 @@ import './components/ArticleForm/ArticleForm.css';
 import './components/ArticleList/ArticleList.css';
 import './components/ArticleView/ArticleView.css';
 
-
 const App = () => {
   const [workspaces, setWorkspaces] = useState([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
@@ -28,6 +26,8 @@ const App = () => {
 
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [error, setError] = useState('');
+
   const wsRef = useRef(null);
 
   // fetch workspaces
@@ -64,7 +64,9 @@ const App = () => {
     try {
       const res = await fetch(`http://localhost:3000/articles/${article.id}`);
       const data = await res.json();
+      if (!Array.isArray(data.files)) data.files = [];
       setSelectedArticle(data);
+
       const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}`);
       const commentsData = await commentsRes.json();
       setComments(commentsData);
@@ -75,8 +77,23 @@ const App = () => {
 
   const handleFormSubmit = (updatedArticle) => {
     setEditingArticle(null);
-    if (selectedArticle && selectedArticle.id === updatedArticle.id) setSelectedArticle(prev => ({ ...prev, ...updatedArticle }));
-    setArticles(prev => prev.map(a => a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a));
+    setArticles(prev => {
+      const exists = prev.find(a => a.id === updatedArticle.id);
+      if (exists) {
+        // Если изменился workspace и статья сейчас не в текущем workspace, удаляем её
+        if (updatedArticle.workspaceId !== selectedWorkspace) {
+          return prev.filter(a => a.id !== updatedArticle.id);
+        }
+        return prev.map(a => a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a);
+      } else {
+        // новая статья
+        return [...prev, updatedArticle];
+      }
+    });
+
+    if (selectedArticle && selectedArticle.id === updatedArticle.id) {
+      setSelectedArticle(prev => ({ ...prev, ...updatedArticle }));
+    }
   };
 
   // delete article
@@ -141,6 +158,8 @@ const App = () => {
     }
   }, [selectedWorkspace]);
 
+  const showWorkspaceError = workspaces.length === 0;
+
   return (
       <div className="app-container">
         <h1>My Articles</h1>
@@ -151,6 +170,12 @@ const App = () => {
             onSelect={setSelectedWorkspace}
             onChange={() => { fetchWorkspaces(); fetchArticles(); }}
         />
+
+        {showWorkspaceError && (
+            <div className="form-error">
+              ⚠️ Сначала создайте хотя бы один workspace, чтобы добавлять статьи
+            </div>
+        )}
 
         <div className="notifications">
           {notifications.map((n,i) => (
@@ -166,21 +191,34 @@ const App = () => {
 
         {!selectedArticle && !loading && (
             <>
-              <ArticleList articles={articles} onSelect={handleSelectArticle} onEdit={setEditingArticle} />
-              <ArticleForm
-                  onSubmit={handleFormSubmit}
-                  articleToEdit={editingArticle}
-                  workspaceId={selectedWorkspace}
-                  onCreated={() => fetchArticles()}
-              />
+              <ArticleList articles={articles} onSelect={handleSelectArticle} />
+              {!showWorkspaceError && (
+                  <ArticleForm
+                      onSubmit={handleFormSubmit}
+                      workspaceId={selectedWorkspace}
+                      workspaces={workspaces}
+                      onCreated={() => fetchArticles()}
+                  />
+              )}
             </>
         )}
 
         {selectedArticle && (
             <>
-              <ArticleView article={selectedArticle} onBack={() => setSelectedArticle(null)} onEdit={setEditingArticle} onDelete={handleDeleteArticle} />
+              <ArticleView
+                  article={selectedArticle}
+                  workspaces={workspaces}
+                  onBack={() => setSelectedArticle(null)}
+                  onDelete={handleDeleteArticle}
+                  onUpdate={handleFormSubmit} // обновляет selectedArticle и список статей
+              />
               <CommentList comments={comments} onEdit={setEditingComment} onDelete={handleCommentDelete} />
-              <CommentForm onSubmit={handleCommentSubmit} articleId={selectedArticle.id} commentToEdit={editingComment} onCancel={() => setEditingComment(null)} />
+              <CommentForm
+                  onSubmit={handleCommentSubmit}
+                  articleId={selectedArticle.id}
+                  commentToEdit={editingComment}
+                  onCancel={() => setEditingComment(null)}
+              />
             </>
         )}
       </div>

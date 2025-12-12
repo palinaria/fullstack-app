@@ -4,17 +4,17 @@ import './CommentForm.css';
 const CommentForm = ({ articleId, onSubmit, commentToEdit, onCancel }) => {
     const [text, setText] = useState("");
 
-    // Если редактируем комментарий, подставляем его текст
+
     useEffect(() => {
         if (commentToEdit) setText(commentToEdit.text);
-        else setText(""); // при создании нового комментария очищаем
+        else setText("");
     }, [commentToEdit]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!text.trim() || !articleId) return; // проверяем, что есть текст и articleId
+        if (!text.trim() || !articleId) return;
         onSubmit({ text, articleId, id: commentToEdit?.id });
-        setText(""); // очищаем поле после отправки
+        setText("");
     };
 
     return (
