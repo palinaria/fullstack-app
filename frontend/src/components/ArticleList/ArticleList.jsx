@@ -2,6 +2,7 @@ import React from 'react';
 import './ArticleList.css';
 
 const ArticleList = ({ articles, onSelect }) => {
+    // Проверка на пустой массив
     if (!articles || articles.length === 0) return <p className="empty">Статей нет</p>;
 
     return (

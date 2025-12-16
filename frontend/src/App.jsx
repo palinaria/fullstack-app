@@ -46,12 +46,19 @@ const App = () => {
 
   // articles per workspace
   const fetchArticles = async () => {
-    if (!selectedWorkspace) return;
+    if (!selectedWorkspace) return; // проверка выбранного workspace
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`);
       const data = await res.json();
-      setArticles(data);
+
+      // Проверка, чтобы files всегда был массив
+      const fixedData = data.map(article => ({
+        ...article,
+        files: Array.isArray(article.files) ? article.files : []
+      }));
+
+      setArticles(fixedData);
     } catch (err) {
       console.error(err);
     } finally { setLoading(false); }
@@ -64,6 +71,8 @@ const App = () => {
     try {
       const res = await fetch(`http://localhost:3000/articles/${article.id}`);
       const data = await res.json();
+
+      // Всегда массив
       if (!Array.isArray(data.files)) data.files = [];
       setSelectedArticle(data);
 
@@ -80,13 +89,11 @@ const App = () => {
     setArticles(prev => {
       const exists = prev.find(a => a.id === updatedArticle.id);
       if (exists) {
-        // Если изменился workspace и статья сейчас не в текущем workspace, удаляем её
         if (updatedArticle.workspaceId !== selectedWorkspace) {
           return prev.filter(a => a.id !== updatedArticle.id);
         }
         return prev.map(a => a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a);
       } else {
-        // новая статья
         return [...prev, updatedArticle];
       }
     });
@@ -210,7 +217,7 @@ const App = () => {
                   workspaces={workspaces}
                   onBack={() => setSelectedArticle(null)}
                   onDelete={handleDeleteArticle}
-                  onUpdate={handleFormSubmit} // обновляет selectedArticle и список статей
+                  onUpdate={handleFormSubmit}
               />
               <CommentList comments={comments} onEdit={setEditingComment} onDelete={handleCommentDelete} />
               <CommentForm

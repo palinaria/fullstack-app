@@ -1,12 +1,14 @@
-
-import { Article } from '../models/article.js';
-import { Comment } from '../models/comment.js';
-import { upload } from '../services/fileService.js';
+import { Article } from '../models/Article.js';
+import { Comment } from '../models/Comment.js';
 import { broadcastNotification } from '../utils/ws.js';
 
 // Получить все статьи в workspace
 export const getArticlesByWorkspace = async (req, res) => {
     const { workspaceId } = req.params;
+
+    if (!workspaceId) {
+        return res.status(400).json({ message: 'Не указан workspaceId' });
+    }
 
     try {
         const articles = await Article.findAll({ where: { workspaceId } });
@@ -17,18 +19,19 @@ export const getArticlesByWorkspace = async (req, res) => {
     }
 };
 
-// Получить статью по ID (возвращаем вместе с комментариями)
+// Получить статью по ID (с комментариями)
 export const getArticleById = async (req, res) => {
     const { id } = req.params;
 
+    if (!id) {
+        return res.status(400).json({ message: 'Не указан ID статьи' });
+    }
+
     try {
         const article = await Article.findByPk(id);
-        if (!article) {
-            return res.status(404).json({ message: 'Статья не найдена' });
-        }
+        if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
         const comments = await Comment.findAll({ where: { articleId: id } });
-
         res.json({ ...article.toJSON(), comments });
     } catch (err) {
         console.error(err);
@@ -72,21 +75,17 @@ export const updateArticle = async (req, res) => {
     const { title, content, workspaceId } = req.body;
     const newFiles = req.files ? req.files.map(f => f.filename) : [];
 
+    if (!id) return res.status(400).json({ message: 'Не указан ID статьи' });
+
     try {
         const article = await Article.findByPk(id);
-        if (!article) {
-            return res.status(404).json({ message: 'Статья не найдена' });
-        }
+        if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
-        // Обновление данных
         article.title = title ?? article.title;
         article.content = content ?? article.content;
         article.workspaceId = workspaceId ?? article.workspaceId;
 
-        // Если загружены новые файлы — заменить
-        if (newFiles.length > 0) {
-            article.files = newFiles;
-        }
+        if (newFiles.length > 0) article.files = newFiles;
 
         await article.save();
 
@@ -106,15 +105,13 @@ export const updateArticle = async (req, res) => {
 export const deleteArticle = async (req, res) => {
     const { id } = req.params;
 
+    if (!id) return res.status(400).json({ message: 'Не указан ID статьи' });
+
     try {
         const article = await Article.findByPk(id);
-        if (!article) {
-            return res.status(404).json({ message: 'Статья не найдена' });
-        }
+        if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
-        // Удаление комментариев этой статьи
         await Comment.destroy({ where: { articleId: id } });
-
         await article.destroy();
 
         broadcastNotification({
