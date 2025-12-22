@@ -1,0 +1,40 @@
+.workspace-manager {
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+.workspace-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.workspace-description {
+    font-size: 14px;
+    color: #555;
+    margin: 8px 0 16px 0;
+    line-height: 1.4;
+}
+
+.workspace-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.workspace-controls button {
+    padding: 8px 14px;
+    border-radius: 12px;
+    border: 1px solid #000;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #fff;
+    color: #000;
+    transition: all 0.2s ease;
+}
+
+.workspace-controls button:hover,
+.workspace-controls button:active {
+    background-color: #000;
+    color: #fff;
+}

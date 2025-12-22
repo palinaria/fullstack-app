@@ -1,84 +1,127 @@
-import express from 'express';
-import { Article } from '../models/article.js';
-import { upload } from '../services/fileService.js';
+import { Article } from '../models/Article.js';
+import { Comment } from '../models/Comment.js';
 import { broadcastNotification } from '../utils/ws.js';
 
-const router = express.Router();
+// Получить все статьи в workspace
+export const getArticlesByWorkspace = async (req, res) => {
+    const { workspaceId } = req.params;
 
-// Получить все статьи
-router.get('/', async (req, res) => {
+    if (!workspaceId) {
+        return res.status(400).json({ message: 'Не указан workspaceId' });
+    }
+
     try {
-        const articles = await Article.findAll();
+        const articles = await Article.findAll({ where: { workspaceId } });
         res.json(articles);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: 'Ошибка при получении статей' });
     }
-});
+};
 
-// Получить статью по ID
-router.get('/:id', async (req, res) => {
-    const id = req.params.id;
+// Получить статью по ID (с комментариями)
+export const getArticleById = async (req, res) => {
+    const { id } = req.params;
+
+    if (!id) {
+        return res.status(400).json({ message: 'Не указан ID статьи' });
+    }
+
     try {
         const article = await Article.findByPk(id);
         if (!article) return res.status(404).json({ message: 'Статья не найдена' });
-        res.json(article);
+
+        const comments = await Comment.findAll({ where: { articleId: id } });
+        res.json({ ...article.toJSON(), comments });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: 'Ошибка при чтении статьи' });
     }
-});
+};
 
-// Создать статью с файлами
-router.post('/', upload.array('files'), async (req, res) => {
-    const { title, content } = req.body;
-    if (!title || !content) return res.status(400).json({ message: 'Нужно ввести заголовок и текст' });
+// Создать статью
+export const createArticle = async (req, res) => {
+    const { title, content, workspaceId } = req.body;
+
+    if (!title || !content || !workspaceId) {
+        return res.status(400).json({ message: 'Нужно указать заголовок, текст и workspaceId' });
+    }
 
     const files = req.files ? req.files.map(f => f.filename) : [];
 
     try {
-        const newArticle = await Article.create({ title, content, files });
-        broadcastNotification({ type: 'article_created', article: newArticle });
+        const newArticle = await Article.create({
+            title,
+            content,
+            workspaceId,
+            files
+        });
+
+        broadcastNotification({
+            type: 'article_created',
+            article: newArticle
+        });
+
         res.status(201).json(newArticle);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: 'Ошибка при сохранении статьи' });
     }
-});
+};
 
-// Обновление статьи с файлами
-router.put('/:id', upload.array('files'), async (req, res) => {
+// Обновить статью
+export const updateArticle = async (req, res) => {
     const { id } = req.params;
-    const { title, content } = req.body;
+    const { title, content, workspaceId } = req.body;
     const newFiles = req.files ? req.files.map(f => f.filename) : [];
 
+    if (!id) return res.status(400).json({ message: 'Не указан ID статьи' });
+
     try {
         const article = await Article.findByPk(id);
         if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
-        article.title = title;
-        article.content = content;
-        article.files = newFiles.length > 0 ? newFiles : (article.files || []);
+        article.title = title ?? article.title;
+        article.content = content ?? article.content;
+        article.workspaceId = workspaceId ?? article.workspaceId;
+
+        if (newFiles.length > 0) article.files = newFiles;
 
         await article.save();
-        broadcastNotification({ type: 'article_updated', article });
+
+        broadcastNotification({
+            type: 'article_updated',
+            article
+        });
+
         res.json(article);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: 'Ошибка при обновлении статьи' });
     }
-});
+};
 
-// Удаление статьи
-router.delete('/:id', async (req, res) => {
+// Удалить статью
+export const deleteArticle = async (req, res) => {
     const { id } = req.params;
+
+    if (!id) return res.status(400).json({ message: 'Не указан ID статьи' });
 
     try {
         const article = await Article.findByPk(id);
         if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
+        await Comment.destroy({ where: { articleId: id } });
         await article.destroy();
-        broadcastNotification({ type: 'article_deleted', id });
+
+        broadcastNotification({
+            type: 'article_deleted',
+            id
+        });
+
         res.json({ message: 'Статья удалена' });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: 'Ошибка при удалении статьи' });
     }
-});
-
-export default router;
+};

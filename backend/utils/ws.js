@@ -1,8 +1,8 @@
+
 import { WebSocketServer } from 'ws';
 
 let wss;
 
-// Инициализация WebSocket
 export const setupWebSocket = (server) => {
     wss = new WebSocketServer({ server });
 
@@ -19,7 +19,6 @@ export const setupWebSocket = (server) => {
     });
 };
 
-// Отправка уведомлений всем клиентам
 export const broadcastNotification = (message) => {
     if (!wss) return;
     wss.clients.forEach(client => {

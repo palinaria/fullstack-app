@@ -1,0 +1,74 @@
+.workspace-form-container {
+    padding: 20px;
+    margin: 20px auto;
+    width: 400px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    background-color: #f9f9f9;
+}
+
+.workspace-form-container h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 10px;
+}
+
+.underline {
+    width: 50px;
+    height: 2px;
+    background-color: #333;
+    margin-bottom: 20px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+label {
+    font-weight: 500;
+    color: #000;
+    margin-bottom: 5px;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #000;
+    background-color: #fff;
+    color: #000;
+}
+
+button {
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 1px solid #000;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #fff;
+    color: #000;
+    margin-right: 10px; /* отступ между кнопками */
+    transition: all 0.2s ease;
+}
+
+button:last-of-type {
+    margin-right: 0;
+}
+
+button:hover,
+button:active {
+    background-color: #000;
+    color: #fff;
+}
+
+button:disabled {
+    background-color: #999;
+    color: #eee;
+    cursor: not-allowed;
+}

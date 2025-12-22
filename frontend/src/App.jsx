@@ -2,155 +2,194 @@ import React, { useState, useEffect, useRef } from 'react';
 import ArticleList from './components/ArticleList/ArticleList.jsx';
 import ArticleView from './components/ArticleView/ArticleView.jsx';
 import ArticleForm from './components/ArticleForm/ArticleForm.jsx';
-import './App.css';
+import CommentForm from './components/CommentForm/CommentForm.jsx';
+import CommentList from './components/CommentList/CommentList.jsx';
+import WorkspaceManager from './components/WorkspaceManager/WSManager/WorkspaceManager.jsx';
 
-//срабатывает app.jsx
-//wsRef – реф для хранения WebSocket
-//Загрузка списка статей
-// Выполняется useEffect(() => fetchArticles(), []).
-//ws
-//Пользователь кликает на статью в списке.
-// handleSelectArticle делает GET-запрос к /articles/:id.
-// Сервер возвращает статью → React устанавливает selectedArticle.
-// Рендерится компонент <ArticleView />.
+import './App.css';
+import "./components/CommentForm/CommentForm.css";
+import './components/CommentList/CommenList.css';
+import './components/ArticleForm/ArticleForm.css';
+import './components/ArticleList/ArticleList.css';
+import './components/ArticleView/ArticleView.css';
 
 const App = () => {
+  const [workspaces, setWorkspaces] = useState([]);
+  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
+
   const [articles, setArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [editingArticle, setEditingArticle] = useState(null);
+
+  const [comments, setComments] = useState([]);
+  const [editingComment, setEditingComment] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const wsRef = useRef(null); // хранение WebSocket-соединения
+  const [error, setError] = useState('');
 
-  const fetchArticles = async () => {
-    setLoading(true);
+  const wsRef = useRef(null);
+
+  // fetch workspaces
+  const fetchWorkspaces = async () => {
     try {
-      const res = await fetch('http://localhost:3000/articles');
-      console.log('Response status:', res.status);
-      const data = await res.json(); // получаем с бэка
-      setArticles(data);
+      const res = await fetch('http://localhost:3000/workspaces');
+      const data = await res.json();
+      setWorkspaces(data);
+      if (!selectedWorkspace && data.length > 0) setSelectedWorkspace(data[0].id);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
+
+  useEffect(() => { fetchWorkspaces(); }, []);
+
+  // articles per workspace
+  const fetchArticles = async () => {
+    if (!selectedWorkspace) return; // проверка выбранного workspace
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`);
+      const data = await res.json();
+
+      // Проверка, чтобы files всегда был массив
+      const fixedData = data.map(article => ({
+        ...article,
+        files: Array.isArray(article.files) ? article.files : []
+      }));
+
+      setArticles(fixedData);
+    } catch (err) {
+      console.error(err);
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchArticles(); }, [selectedWorkspace]);
 
   const handleSelectArticle = async (article) => {
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:3000/articles/${article.id}`);
       const data = await res.json();
+
+      // Всегда массив
+      if (!Array.isArray(data.files)) data.files = [];
       setSelectedArticle(data);
+
+      const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}`);
+      const commentsData = await commentsRes.json();
+      setComments(commentsData);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  const handleEditArticle = (article) => {
-    setEditingArticle(article);
-    setSelectedArticle(null); // переключает интерфейс на "форму редактирования статьи"
-  };
-
-  // вызывается, когда пользователь закончил редактировать статью и нажал "Сохранить"
   const handleFormSubmit = (updatedArticle) => {
-    setEditingArticle(null); // Мы больше не редактируем статью
+    setEditingArticle(null);
+    setArticles(prev => {
+      const exists = prev.find(a => a.id === updatedArticle.id);
+      if (exists) {
+        if (updatedArticle.workspaceId !== selectedWorkspace) {
+          return prev.filter(a => a.id !== updatedArticle.id);
+        }
+        return prev.map(a => a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a);
+      } else {
+        return [...prev, updatedArticle];
+      }
+    });
+
     if (selectedArticle && selectedArticle.id === updatedArticle.id) {
-      // Если сейчас на экране открыта эта же статья, которую мы обновили — нужно обновить её прямо в окне просмотра
       setSelectedArticle(prev => ({ ...prev, ...updatedArticle }));
     }
-    setArticles(prevArticles =>
-        prevArticles.map(a =>
-            a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a
-        ) // Если найдёшь статью с таким же id — обнови её. Если нет — оставь как есть.
-    );
   };
 
+  // delete article
   const handleDeleteArticle = async (id) => {
-    const confirmDelete = window.confirm("Вы точно хотите удалить эту статью?");
-    if (!confirmDelete) return;
+    if (!window.confirm('Вы точно хотите удалить эту статью?')) return;
     try {
       const res = await fetch(`http://localhost:3000/articles/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error("Ошибка при удалении статьи");
-      if (selectedArticle && selectedArticle.id === id) {
-        // Если да, значит пользователь смотрит статью, которую удаляем
-        setSelectedArticle(null); // закрываем окно просмотра этой статьи, чтобы не показывать уже удалённый контент
-      }
-      setArticles(prevArticles => prevArticles.filter(a => a.id !== id));
-      // filter оставляет только те статьи, у которых id НЕ равно удаляемому
+      if (!res.ok) throw new Error('Ошибка');
+      setArticles(prev => prev.filter(a => a.id !== id));
+      if (selectedArticle?.id === id) setSelectedArticle(null);
     } catch (err) {
       console.error(err);
-      alert("Не удалось удалить статью");
     }
   };
 
-  useEffect(() => {
-    fetchArticles();
-  }, []); // 1 раз при загрузке
+  // comments
+  const handleCommentSubmit = async ({ text, articleId, id }) => {
+    try {
+      if (!text.trim()) return;
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `http://localhost:3000/comments/${id}` : 'http://localhost:3000/comments';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, articleId, workspaceId: selectedWorkspace })
+      });
+      const data = await res.json();
+      if (id) {
+        setComments(prev => prev.map(c => c.id === id ? data : c));
+        setEditingComment(null);
+      } else {
+        setComments(prev => [...prev, data]);
+      }
+    } catch (err) { console.error(err); }
+  };
 
+  const handleCommentDelete = async (id) => {
+    if (!window.confirm('Удалить комментарий?')) return;
+    try {
+      await fetch(`http://localhost:3000/comments/${id}`, { method: 'DELETE' });
+      setComments(prev => prev.filter(c => c.id !== id));
+    } catch (err) { console.error(err); }
+  };
+
+  // websockets for notifications
   useEffect(() => {
-    if (!wsRef.current) { // Проверяем, подключён ли WebSocket
-      const connectWebSocket = () => {
+    if (!wsRef.current) {
+      const connect = () => {
         const ws = new WebSocket('ws://localhost:3000');
         wsRef.current = ws;
-
-        ws.onopen = () => console.log("WebSocket подключен");
-
-        ws.onmessage = (event) => {
-          // срабатывает, когда сервер присылает сообщение
-          const message = JSON.parse(event.data);
-          if (['article_created', 'article_updated', 'article_deleted'].includes(message.type)) {
-            setNotifications(prev => [...prev, message]);
-            // создаём новый массив: сначала старые уведомления из prev, потом новое уведомление message
-
-            if (message.type === 'article_created') {
-              setArticles(prev => [...prev, message.article]);
-            } else if (message.type === 'article_deleted') {
-              setArticles(prev => prev.filter(a => a.id !== message.id));
-              if (selectedArticle && selectedArticle.id === message.id) {
-                // Если пользователь сейчас смотрит статью, которую удалили
-                setSelectedArticle(null);
-              }
-            }
-          }
+        ws.onopen = () => console.log('WS connected');
+        ws.onmessage = e => {
+          const msg = JSON.parse(e.data);
+          setNotifications(prev => [...prev, msg]);
+          if (msg.article && msg.article.workspaceId !== selectedWorkspace) return;
+          if (msg.type === 'article_created') setArticles(prev => [...prev, msg.article]);
+          if (msg.type === 'article_deleted') setArticles(prev => prev.filter(a => a.id !== msg.id));
         };
-
-        ws.onerror = (err) => console.error("WebSocket ошибка:", err);
-
-        ws.onclose = () => {
-          // Срабатывает, когда сервер закрыл соединение или соединение прервалось
-          setTimeout(() => {
-            wsRef.current = null; // обнуляем ссылку на старый WebSocket
-            connectWebSocket(); // заново создаём соединение WebSocket с сервером
-          }, 3000); // если соединение оборвалось, автоматически переподключаемся через 3 секунды
-        };
+        ws.onclose = () => { wsRef.current = null; setTimeout(connect, 2000); };
       };
-
-      connectWebSocket();
+      connect();
     }
-  }, [selectedArticle]);
+  }, [selectedWorkspace]);
 
-  // каждое уведомление отображается 5 секунд, а потом исчезает
-  useEffect(() => {
-    if (notifications.length === 0) return; // Если нет уведомлений, то ничего не делаем и выходим
-    const timer = setTimeout(() => {
-      setNotifications(prev => prev.slice(1)); // создаёт новый массив без первого элемента
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [notifications]);
+  const showWorkspaceError = workspaces.length === 0;
 
   return (
       <div className="app-container">
         <h1>My Articles</h1>
 
+        <WorkspaceManager
+            workspaces={workspaces}
+            selectedWorkspace={selectedWorkspace}
+            onSelect={setSelectedWorkspace}
+            onChange={() => { fetchWorkspaces(); fetchArticles(); }}
+        />
+
+        {showWorkspaceError && (
+            <div className="form-error">
+              ⚠️ Сначала создайте хотя бы один workspace, чтобы добавлять статьи
+            </div>
+        )}
+
         <div className="notifications">
-          {notifications.map((n, index) => (
-              <div key={index} className="notification">
+          {notifications.map((n,i) => (
+              <div key={i} className="notification">
                 {n.type === 'article_created' && `Новая статья: "${n.article.title}"`}
-                {n.type === 'article_updated' && `Статья обновлена: "${n.article.title}"`}
-                {n.type === 'article_deleted' && `Статья удалена (ID: ${n.id})`}
+                {n.type === 'article_updated' && `Обновлена: "${n.article.title}"`}
+                {n.type === 'article_deleted' && `Удалена статья ID ${n.id}`}
               </div>
           ))}
         </div>
@@ -158,27 +197,36 @@ const App = () => {
         {loading && <p>Loading...</p>}
 
         {!selectedArticle && !loading && (
-
             <>
-              <ArticleList
-                  articles={articles}// если нет выбранной статьи,то данные не загружаются
-                  onSelect={handleSelectArticle}//!! get запрос
-                  onEdit={handleEditArticle}
-              />
-              <ArticleForm
-                  onSubmit={handleFormSubmit} // POST-запрос к /articles
-                  articleToEdit={editingArticle}
-              />
+              <ArticleList articles={articles} onSelect={handleSelectArticle} />
+              {!showWorkspaceError && (
+                  <ArticleForm
+                      onSubmit={handleFormSubmit}
+                      workspaceId={selectedWorkspace}
+                      workspaces={workspaces}
+                      onCreated={() => fetchArticles()}
+                  />
+              )}
             </>
         )}
 
         {selectedArticle && (
-            <ArticleView
-                article={selectedArticle}
-                onBack={() => setSelectedArticle(null)}
-                onEdit={handleEditArticle}
-                onDelete={handleDeleteArticle}
-            />
+            <>
+              <ArticleView
+                  article={selectedArticle}
+                  workspaces={workspaces}
+                  onBack={() => setSelectedArticle(null)}
+                  onDelete={handleDeleteArticle}
+                  onUpdate={handleFormSubmit}
+              />
+              <CommentList comments={comments} onEdit={setEditingComment} onDelete={handleCommentDelete} />
+              <CommentForm
+                  onSubmit={handleCommentSubmit}
+                  articleId={selectedArticle.id}
+                  commentToEdit={editingComment}
+                  onCancel={() => setEditingComment(null)}
+              />
+            </>
         )}
       </div>
   );

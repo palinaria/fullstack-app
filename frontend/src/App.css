@@ -133,3 +133,22 @@ li:hover {
     from { opacity: 0.9; }
     to { opacity: 0; }
 }
+
+/* Select Workspace Block */
+.workspace-selector {
+    margin-bottom: 20px;
+}
+
+.workspace-selector label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.workspace-selector select {
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    font-size: 14px;
+}
