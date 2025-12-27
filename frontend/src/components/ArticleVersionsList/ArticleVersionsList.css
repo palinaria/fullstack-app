@@ -1,0 +1,19 @@
+.article-versions-list ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 8px;
+}
+
+.article-versions-list button {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+}
+
+.article-versions-list button.current {
+    background: #007bff;
+    color: white;
+    font-weight: bold;
+}

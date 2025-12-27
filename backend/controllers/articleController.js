@@ -1,8 +1,12 @@
 import { Article } from '../models/Article.js';
+import { ArticleVersion } from '../models/ArticleVersion.js';
 import { Comment } from '../models/Comment.js';
 import { broadcastNotification } from '../utils/ws.js';
 
+// ============================
 // Получить все статьи в workspace
+// Только текущая версия
+// ============================
 export const getArticlesByWorkspace = async (req, res) => {
     const { workspaceId } = req.params;
 
@@ -11,7 +15,11 @@ export const getArticlesByWorkspace = async (req, res) => {
     }
 
     try {
-        const articles = await Article.findAll({ where: { workspaceId } });
+        const articles = await Article.findAll({
+            where: { workspaceId },
+            include: [{ model: ArticleVersion, as: 'currentVersion' }]
+        });
+
         res.json(articles);
     } catch (err) {
         console.error(err);
@@ -19,27 +27,52 @@ export const getArticlesByWorkspace = async (req, res) => {
     }
 };
 
-// Получить статью по ID (с комментариями)
+// ============================
+// Получить статью по ID
+// Опционально: конкретная версия
+// ============================
 export const getArticleById = async (req, res) => {
     const { id } = req.params;
+    const { version } = req.query;
 
-    if (!id) {
-        return res.status(400).json({ message: 'Не указан ID статьи' });
-    }
+    if (!id) return res.status(400).json({ message: 'Не указан ID статьи' });
 
     try {
-        const article = await Article.findByPk(id);
+        const article = await Article.findByPk(id, {
+            include: [{ model: ArticleVersion, as: 'currentVersion' }]
+        });
         if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
+        let articleData = article.currentVersion;
+        let isReadonly = false;
+
+        if (version && parseInt(version) !== article.currentVersion.version) {
+            const oldVersion = await ArticleVersion.findOne({
+                where: { articleId: id, version: parseInt(version) }
+            });
+            if (oldVersion) {
+                articleData = oldVersion;
+                isReadonly = true;
+            }
+        }
+
         const comments = await Comment.findAll({ where: { articleId: id } });
-        res.json({ ...article.toJSON(), comments });
+
+        res.json({
+            id: article.id,
+            currentVersion: articleData,
+            isReadonly,
+            comments
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Ошибка при чтении статьи' });
     }
 };
 
-// Создать статью
+// ============================
+// Создать статью + версия 1
+// ============================
 export const createArticle = async (req, res) => {
     const { title, content, workspaceId } = req.body;
 
@@ -50,43 +83,61 @@ export const createArticle = async (req, res) => {
     const files = req.files ? req.files.map(f => f.filename) : [];
 
     try {
-        const newArticle = await Article.create({
+        const article = await Article.create({ workspaceId });
+
+        const version = await ArticleVersion.create({
+            articleId: article.id,
+            version: 1,
             title,
             content,
-            workspaceId,
             files
         });
 
+        article.currentVersionId = version.id;
+        await article.save();
+
         broadcastNotification({
             type: 'article_created',
-            article: newArticle
+            article
         });
 
-        res.status(201).json(newArticle);
+        res.status(201).json({
+            id: article.id,
+            currentVersion: version
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Ошибка при сохранении статьи' });
+        res.status(500).json({ message: 'Ошибка при создании статьи' });
     }
 };
 
-// Обновить статью
+// ============================
+// Обновить статью = новая версия
+// ============================
 export const updateArticle = async (req, res) => {
     const { id } = req.params;
-    const { title, content, workspaceId } = req.body;
-    const newFiles = req.files ? req.files.map(f => f.filename) : [];
+    const { title, content } = req.body;
+    const files = req.files ? req.files.map(f => f.filename) : [];
 
     if (!id) return res.status(400).json({ message: 'Не указан ID статьи' });
 
     try {
-        const article = await Article.findByPk(id);
+        const article = await Article.findByPk(id, {
+            include: [{ model: ArticleVersion, as: 'currentVersion' }]
+        });
         if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
-        article.title = title ?? article.title;
-        article.content = content ?? article.content;
-        article.workspaceId = workspaceId ?? article.workspaceId;
+        const newVersionNumber = article.currentVersion.version + 1;
 
-        if (newFiles.length > 0) article.files = newFiles;
+        const newVersion = await ArticleVersion.create({
+            articleId: article.id,
+            version: newVersionNumber,
+            title: title ?? article.currentVersion.title,
+            content: content ?? article.currentVersion.content,
+            files: files.length ? files : article.currentVersion.files
+        });
 
+        article.currentVersionId = newVersion.id;
         await article.save();
 
         broadcastNotification({
@@ -94,14 +145,19 @@ export const updateArticle = async (req, res) => {
             article
         });
 
-        res.json(article);
+        res.json({
+            id: article.id,
+            currentVersion: newVersion
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Ошибка при обновлении статьи' });
     }
 };
 
-// Удалить статью
+// ============================
+// Удалить статью + все версии + комментарии
+// ============================
 export const deleteArticle = async (req, res) => {
     const { id } = req.params;
 
@@ -112,6 +168,7 @@ export const deleteArticle = async (req, res) => {
         if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
         await Comment.destroy({ where: { articleId: id } });
+        await ArticleVersion.destroy({ where: { articleId: id } });
         await article.destroy();
 
         broadcastNotification({
@@ -123,5 +180,26 @@ export const deleteArticle = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Ошибка при удалении статьи' });
+    }
+};
+
+// ============================
+// Новый: Получить все версии статьи
+// ============================
+export const getArticleVersions = async (req, res) => {
+    const { id } = req.params;
+
+    if (!id) return res.status(400).json({ message: 'Не указан ID статьи' });
+
+    try {
+        const versions = await ArticleVersion.findAll({
+            where: { articleId: id },
+            order: [['version', 'DESC']]
+        });
+
+        res.json(versions);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Ошибка при получении версий статьи' });
     }
 };

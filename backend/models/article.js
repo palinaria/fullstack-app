@@ -3,29 +3,32 @@ import { sequelize } from '../services/db.js';
 
 export class Article extends Model {
     static associate(models) {
-        Article.hasMany(models.Comment, {
+        Article.hasMany(models.ArticleVersion, {
             foreignKey: 'articleId',
-            as: 'comments',
-            onDelete: 'CASCADE'
+            as: 'versions'
         });
-        Article.belongsTo(models.Workspace, {
-            foreignKey: 'workspaceId',
-            as: 'workspace'
+
+        Article.belongsTo(models.ArticleVersion, {
+            foreignKey: 'currentVersionId',
+            as: 'currentVersion'
         });
     }
 }
 
 Article.init(
     {
-        title: { type: DataTypes.STRING, allowNull: false },
-        content: { type: DataTypes.TEXT, allowNull: false },
-        files: { type: DataTypes.JSON, allowNull: true, defaultValue: [] },
-        workspaceId: { type: DataTypes.INTEGER, allowNull: false }
+        workspaceId: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        currentVersionId: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        }
     },
     {
         sequelize,
         modelName: 'Article',
-        tableName: 'Articles',
-        timestamps: true
+        tableName: 'Articles'
     }
 );

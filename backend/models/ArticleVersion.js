@@ -1,17 +1,40 @@
-'use strict';
+import { Model, DataTypes } from 'sequelize';
+import { sequelize } from '../services/db.js';
 
-module.exports = (sequelize, DataTypes) => {
-    const ArticleVersion = sequelize.define('ArticleVersion', {
-        articleId: { type: DataTypes.INTEGER, allowNull: false },
-        title: { type: DataTypes.STRING, allowNull: false },
-        content: { type: DataTypes.TEXT, allowNull: false },
-        files: { type: DataTypes.JSON, defaultValue: [] },
-        versionNumber: { type: DataTypes.INTEGER, allowNull: false }
-    }, {});
+export class ArticleVersion extends Model {
+    static associate(models) {
+        ArticleVersion.belongsTo(models.Article, {
+            foreignKey: 'articleId'
+        });
+    }
+}
 
-    ArticleVersion.associate = models => {
-        ArticleVersion.belongsTo(models.Article, { foreignKey: 'articleId', as: 'article' });
-    };
-
-    return ArticleVersion;
-};
+ArticleVersion.init(
+    {
+        articleId: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        version: {
+            type: DataTypes.INTEGER,
+            allowNull: false
+        },
+        title: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        content: {
+            type: DataTypes.TEXT,
+            allowNull: false
+        },
+        files: {
+            type: DataTypes.JSON,
+            defaultValue: []
+        }
+    },
+    {
+        sequelize,
+        modelName: 'ArticleVersion',
+        tableName: 'ArticleVersionsList'
+    }
+);
