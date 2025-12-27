@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import './ArticleForm.css';
 
-const ArticleForm = ({ onSubmit, articleToEdit, workspaceId }) => {
+const ArticleForm = ({ onSubmit, articleToEdit, workspaceId, articleId }) => {
     const [title, setTitle] = useState(articleToEdit?.title || '');
     const [content, setContent] = useState(articleToEdit?.content || '');
     const [files, setFiles] = useState([]);
@@ -15,40 +14,25 @@ const ArticleForm = ({ onSubmit, articleToEdit, workspaceId }) => {
         setError('');
     }, [articleToEdit]);
 
-    const handleFileChange = (e) => {
-        setFiles(Array.from(e.target.files));
-    };
+    const handleFileChange = (e) => { setFiles(Array.from(e.target.files)); };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!title || !content) {
-            setError('Введите заголовок и текст');
-            return;
-        }
-
+        if (!title || !content) { setError('Введите заголовок и текст'); return; }
         try {
             const method = articleToEdit ? 'PUT' : 'POST';
-            const url = articleToEdit ? `http://localhost:3000/articles/${articleToEdit.id}` : 'http://localhost:3000/articles';
-
-            const formData = new FormData();
+            const url = articleToEdit ? `http://localhost:3000/articles/${articleId}` : 'http://localhost:3000/articles';
+            const formData = new FormData( );
             formData.append('title', title);
             formData.append('content', content);
             formData.append('workspaceId', workspaceId);
             files.forEach((file) => formData.append('files', file));
-
             const res = await fetch(url, { method, body: formData });
             if (!res.ok) throw new Error('Ошибка при сохранении статьи');
-
             const updatedArticle = await res.json();
             onSubmit(updatedArticle);
-            setTitle('');
-            setContent('');
-            setFiles([]);
-            setError('');
-        } catch (err) {
-            console.error(err);
-            setError(err.message || 'Не удалось сохранить статью');
-        }
+            setTitle(''); setContent(''); setFiles([]); setError('');
+        } catch (err) { setError(err.message || 'Не удалось сохранить статью'); }
     };
 
     return (

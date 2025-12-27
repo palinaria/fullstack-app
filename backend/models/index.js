@@ -19,13 +19,15 @@ if (config.use_env_variable) {
 
 const db = {};
 
-
-import { Article } from './Article.js';
+import { Article } from './article.js';
 import { ArticleVersion } from './ArticleVersion.js';
+import { Comment } from './comment.js';
+import { Workspace } from './workspace.js';
 
 db.Article = Article;
 db.ArticleVersion = ArticleVersion;
-
+db.Comment = Comment;
+db.Workspace = Workspace;
 
 Object.values(db).forEach(model => {
     if (model.associate) {

@@ -1,4 +1,3 @@
-// index.js
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -6,11 +5,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { sequelize } from './services/db.js';
 import { setupWebSocket } from './utils/ws.js';
-
-
-import './models/Article.js';
-import './models/Comment.js';
-import './models/Workspace.js';
+import db from './models/index.js';
 
 import articleRoutes from './routes/articleRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
@@ -34,13 +29,10 @@ app.use('/comments', commentRoutes);
 app.use('/workspaces', workspaceRoutes);
 
 const server = app.listen(PORT, async () => {
-    console.log('Сервер работает на http://localhost:' + PORT);
-
+    console.log('Сервер работает на http://localhost:' + PORT );
     try {
         await sequelize.authenticate();
         console.log('Подключение к базе успешно!');
-
-
         await sequelize.sync();
         console.log('База синхронизирована');
     } catch (error) {

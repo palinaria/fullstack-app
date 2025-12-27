@@ -1,21 +1,19 @@
 import React from 'react';
 import './ArticleVersionsList.css';
 
-const ArticleVersionsList = ({ versions, currentVersionId, onSelect }) => {
+const ArticleVersionsList = ({ versions, currentVersionNumber, onSelect }) => {
     if (!versions || versions.length === 0) return null;
-
+    const sortedVersions = [...versions].sort((a, b) => b.version - a.version);
     return (
         <div className="article-versions-list">
             <h4>Версии статьи:</h4>
             <ul>
-                {versions.map(v => (
+                {sortedVersions.map(v => (
                     <li key={v.id}>
-                        <button
-                            className={v.id === currentVersionId ? 'current' : ''}
-                            onClick={() => onSelect(v.id)}
-                        >
-                            Версия {v.version} {v.id === currentVersionId && '(текущая)'}
+                        <button className={v.version === currentVersionNumber ? 'current' : ''} onClick={() => onSelect(v.version)}>
+                            Версия {v.version} {v.version === currentVersionNumber && '(текущая)'}
                         </button>
+                        <span className="version-date">{new Date(v.createdAt).toLocaleString('ru-RU')}</span>
                     </li>
                 ))}
             </ul>
