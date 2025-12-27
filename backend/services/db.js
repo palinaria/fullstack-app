@@ -1,7 +1,8 @@
 import { Sequelize } from 'sequelize';
-import configFile from '../config/config.cjs';
+import configFile from '../config/config.js';
 
-const config = configFile.development;
+const env = process.env.NODE_ENV || 'development';
+const config = configFile[env];
 
 export const sequelize = new Sequelize(
     config.database,
