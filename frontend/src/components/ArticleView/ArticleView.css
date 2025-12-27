@@ -29,12 +29,15 @@
 .back-button {
     margin-bottom: 20px;
     padding: 8px 16px;
-    background: #6c757d;
-    color: white;
-    border: none;
+    background: #f8f9fa;
+    color: #000000;
+    border: 1px solid #ccc;
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.2s;
 }
 
-.back-button:hover { background: #5a6268; }
+.back-button:hover {
+    background: #e2e6ea;
+    color: #000000;
+}
