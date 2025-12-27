@@ -2,12 +2,12 @@
 
 module.exports = {
     async up(queryInterface, Sequelize) {
-        // Удаляем старые поля
+
         await queryInterface.removeColumn('Articles', 'title');
         await queryInterface.removeColumn('Articles', 'content');
         await queryInterface.removeColumn('Articles', 'files');
 
-        // Добавляем currentVersionId (FK уже в create-articles)
+
     },
 
     async down(queryInterface, Sequelize) {
