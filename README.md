@@ -9,7 +9,7 @@ Fullstack проект на React + Node.js, где можно создават�
 4. Запустите миграции для создания таблиц: npx sequelize-cli db:migrate
 5.Запустите сервер: npm run dev
 6.Перейдите в папку `frontend` : cd frontend
-7.npm install
+7. Установите все зависимости :npm install
 8.npm run dev
 
 

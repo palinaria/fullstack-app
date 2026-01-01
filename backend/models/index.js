@@ -20,7 +20,7 @@ if (config.use_env_variable) {
 const db = {};
 
 import { Article } from './article.js';
-import { ArticleVersion } from './ArticleVersion.js';
+import { ArticleVersion } from './articleVersion.js';
 import { Comment } from './comment.js';
 import { Workspace } from './workspace.js';
 

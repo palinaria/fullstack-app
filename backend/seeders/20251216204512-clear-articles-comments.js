@@ -1,16 +1,23 @@
-'use strict';
+export default {
+    async up(queryInterface, Sequelize) {
+        await queryInterface.bulkDelete('Comments', null, {
+            truncate: true,
+            cascade: true,
+            restartIdentity: true
+        });
 
-import { Comment } from '../models/Comment.js';
-import { Article } from '../models/Article.js';
+        await queryInterface.bulkDelete('ArticleVersionsList', null, {
+            truncate: true,
+            cascade: true,
+            restartIdentity: true
+        });
 
-export async function up(queryInterface, Sequelize) {
-    // Удаляем все комментарии
-    await Comment.destroy({ where: {}, truncate: true, restartIdentity: true });
+        await queryInterface.bulkDelete('Articles', null, {
+            truncate: true,
+            cascade: true,
+            restartIdentity: true
+        });
+    },
 
-    // Удаляем все статьи
-    await Article.destroy({ where: {}, truncate: true, restartIdentity: true });
-}
-
-export async function down(queryInterface, Sequelize) {
-    // Ничего не делаем
-}
+    async down() {}
+};

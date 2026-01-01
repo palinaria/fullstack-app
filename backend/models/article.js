@@ -1,5 +1,5 @@
-import { Model, DataTypes } from 'sequelize';
-import { sequelize } from '../services/db.js';
+import {Model, DataTypes} from 'sequelize';
+import {sequelize} from '../services/db.js';
 
 export class Article extends Model {
     static associate(models) {

@@ -16,11 +16,6 @@ module.exports = {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE'
       },
-      currentVersionId: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: { model: 'ArticleVersionsList', key: 'id' }
-      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

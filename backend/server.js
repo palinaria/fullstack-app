@@ -15,7 +15,8 @@ const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 const uploadFolder = path.join(currentDir, 'uploads');
 if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder);
@@ -28,8 +29,8 @@ app.use('/articles', articleRoutes);
 app.use('/comments', commentRoutes);
 app.use('/workspaces', workspaceRoutes);
 
-const server = app.listen(PORT, async () => {
-    console.log('Сервер работает на http://localhost:' + PORT );
+const server = app.listen(PORT, HOST, async () => {
+    console.log(`Сервер работает на http://${HOST}:${PORT}` );
     try {
         await sequelize.authenticate();
         console.log('Подключение к базе успешно!');
