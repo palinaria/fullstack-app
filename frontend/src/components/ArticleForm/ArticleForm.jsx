@@ -22,24 +22,44 @@ const ArticleForm = ({ onSubmit, articleToEdit, workspaceId, articleId, workspac
         files.forEach(f => formData.append('files', f));
 
         const url = articleToEdit ? `http://localhost:3000/articles/${articleId}` : 'http://localhost:3000/articles';
-        const res = await fetch(url, { method: articleToEdit ? 'PUT' : 'POST', body: formData } );
-        onSubmit(await res.json());
-        setTitle(''); setContent(''); setFiles([]);
+
+        try {
+            const res = await fetch(url, { method: articleToEdit ? 'PUT' : 'POST', body: formData }  );
+            const data = await res.json();
+
+
+            if (!res.ok) {
+                alert(data.message || 'Ошибка при сохранении статьи');
+                return;
+            }
+
+            onSubmit(data);
+            setTitle('');
+            setContent('');
+            setFiles([]);
+
+            const fileInput = e.target.querySelector('input[type="file"]');
+            if (fileInput) fileInput.value = '';
+
+        } catch (err) {
+            console.error(err);
+            alert('Произошла ошибка при отправке данных');
+        }
     };
 
     return (
-        <div className="article-form">
-            <h2>{articleToEdit ? 'Редактировать статью' : 'Создать статью'}</h2>
-            <form onSubmit={handleSubmit}>
-                <input type="text" placeholder="Заголовок" value={title} onChange={e => setTitle(e.target.value)} />
-                <textarea placeholder="Текст" value={content} onChange={e => setContent(e.target.value)} />
-                <select value={selectedWS} onChange={e => setSelectedWS(e.target.value)}>
-                    {workspaces?.map(ws => <option key={ws.id} value={ws.id}>{ws.name}</option>)}
-                </select>
-                <input type="file" multiple onChange={e => setFiles(Array.from(e.target.files))} />
-                <button type="submit">Сохранить</button>
-            </form>
-        </div>
+      <div className="article-form">
+          <h2>{articleToEdit ? 'Редактировать статью' : 'Создать статью'}</h2>
+          <form onSubmit={handleSubmit}>
+              <input type="text" placeholder="Заголовок" value={title} onChange={e => setTitle(e.target.value)} />
+              <textarea placeholder="Текст" value={content} onChange={e => setContent(e.target.value)} />
+              <select value={selectedWS} onChange={e => setSelectedWS(e.target.value)}>
+                  {workspaces?.map(ws => <option key={ws.id} value={ws.id}>{ws.name}</option>)}
+              </select>
+              <input type="file" multiple onChange={e => setFiles(Array.from(e.target.files))} />
+              <button type="submit">Сохранить</button>
+          </form>
+      </div>
     );
 };
 export default ArticleForm;

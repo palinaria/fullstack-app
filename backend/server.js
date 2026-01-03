@@ -29,8 +29,16 @@ app.use('/articles', articleRoutes);
 app.use('/comments', commentRoutes);
 app.use('/workspaces', workspaceRoutes);
 
+
+app.use((err, req, res, next) => {
+    if (err instanceof Error) {
+        return res.status(400).json({ message: err.message });
+    }
+    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
+});
+
 const server = app.listen(PORT, HOST, async () => {
-    console.log(`Сервер работает на http://${HOST}:${PORT}` );
+    console.log(`Сервер работает на http://${HOST}:${PORT}`  );
     try {
         await sequelize.authenticate();
         console.log('Подключение к базе успешно!');
