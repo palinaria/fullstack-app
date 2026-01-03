@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -7,9 +8,11 @@ import { sequelize } from './services/db.js';
 import { setupWebSocket } from './utils/ws.js';
 import db from './models/index.js';
 
+import authRoutes from './routes/authRoutes.js';
 import articleRoutes from './routes/articleRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
 import workspaceRoutes from './routes/workspaces.js';
+import { authenticateToken } from './middleware/authMiddleware.js';
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
@@ -25,10 +28,13 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(uploadFolder));
 
-app.use('/articles', articleRoutes);
-app.use('/comments', commentRoutes);
-app.use('/workspaces', workspaceRoutes);
+// Публичные маршруты
+app.use('/auth', authRoutes);
 
+// Защищенные маршруты
+app.use('/articles', authenticateToken, articleRoutes);
+app.use('/comments', authenticateToken, commentRoutes);
+app.use('/workspaces', authenticateToken, workspaceRoutes);
 
 app.use((err, req, res, next) => {
     if (err instanceof Error) {
@@ -38,7 +44,7 @@ app.use((err, req, res, next) => {
 });
 
 const server = app.listen(PORT, HOST, async () => {
-    console.log(`Сервер работает на http://${HOST}:${PORT}`  );
+    console.log(`Сервер работает на http://${HOST}:${PORT}`   );
     try {
         await sequelize.authenticate();
         console.log('Подключение к базе успешно!');
