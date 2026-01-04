@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../context/AuthContext.jsx'; // Добавлен импорт контекста
 import './ArticleForm.css';
 
 const ArticleForm = ({ onSubmit, articleToEdit, workspaceId, articleId, workspaces }) => {
+    const { token } = useAuth(); // Получаем токен из контекста
     const [title, setTitle] = useState(articleToEdit?.title || '');
     const [content, setContent] = useState(articleToEdit?.content || '');
     const [selectedWS, setSelectedWS] = useState(workspaceId);
@@ -24,9 +26,16 @@ const ArticleForm = ({ onSubmit, articleToEdit, workspaceId, articleId, workspac
         const url = articleToEdit ? `http://localhost:3000/articles/${articleId}` : 'http://localhost:3000/articles';
 
         try {
-            const res = await fetch(url, { method: articleToEdit ? 'PUT' : 'POST', body: formData }  );
-            const data = await res.json();
+            const res = await fetch(url, {
+                method: articleToEdit ? 'PUT' : 'POST',
+                body: formData,
+                headers: {
+                    // ВАЖНО: Добавляем токен в заголовки
+                    'Authorization': `Bearer ${token}`
+                }
+            } );
 
+            const data = await res.json();
 
             if (!res.ok) {
                 alert(data.message || 'Ошибка при сохранении статьи');
@@ -38,6 +47,7 @@ const ArticleForm = ({ onSubmit, articleToEdit, workspaceId, articleId, workspac
             setContent('');
             setFiles([]);
 
+            // Сброс поля выбора файлов
             const fileInput = e.target.querySelector('input[type="file"]');
             if (fileInput) fileInput.value = '';
 
