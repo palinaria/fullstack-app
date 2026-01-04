@@ -171,11 +171,13 @@ const MainAppContent = () => {
             }}
           />
           <CommentForm
-            onSubmit={data => handleCommentSubmit({...data, versionId: selectedArticle.currentVersion.id})}
+            onSubmit={(data) => handleCommentSubmit({ ...data, versionId: selectedArticle.currentVersion.id })}
             articleId={selectedArticle.id}
+            workspaceId={selectedWorkspace}
             commentToEdit={editingComment}
             onCancel={() => setEditingComment(null)}
           />
+
         </>
       )}
       {editingArticle && (
