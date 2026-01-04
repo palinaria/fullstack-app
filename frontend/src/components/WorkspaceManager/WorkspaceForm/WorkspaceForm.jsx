@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../../context/AuthContext.jsx';
 import './WorkspaceForm.css'
-
 
 const WorkspaceForm = ({ workspace, onClose }) => {
     const [name, setName] = useState(workspace?.name || '');
     const [description, setDescription] = useState(workspace?.description || '');
+    const { token } = useAuth();
 
     useEffect(() => {
         setName(workspace?.name || '');
@@ -18,13 +18,19 @@ const WorkspaceForm = ({ workspace, onClose }) => {
             if (workspace) {
                 await fetch(`http://localhost:3000/workspaces/${workspace.id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({ name, description })
                 });
             } else {
                 await fetch('http://localhost:3000/workspaces', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({ name, description })
                 });
             }
@@ -35,17 +41,17 @@ const WorkspaceForm = ({ workspace, onClose }) => {
     };
 
     return (
-        <div className="workspace-form-modal">
-            <form className="workspace-form" onSubmit={handleSubmit}>
-                <h3>{workspace ? 'Edit workspace' : 'Create workspace'}</h3>
-                <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-                <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-                <div className="workspace-form-actions">
-                    <button type="submit">Save</button>
-                    <button type="button" onClick={onClose}>Cancel</button>
-                </div>
-            </form>
-        </div>
+      <div className="workspace-form-modal">
+          <form className="workspace-form" onSubmit={handleSubmit}>
+              <h3>{workspace ? 'Edit workspace' : 'Create workspace'}</h3>
+              <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+              <div className="workspace-form-actions">
+                  <button type="submit">Save</button>
+                  <button type="button" onClick={onClose}>Cancel</button>
+              </div>
+          </form>
+      </div>
     );
 };
 

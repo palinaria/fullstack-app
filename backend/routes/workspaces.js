@@ -4,7 +4,6 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-
 router.get('/', authenticateToken, WorkspaceController.listWorkspaces);
 router.get('/:id', authenticateToken, WorkspaceController.getWorkspace);
 router.post('/', authenticateToken, WorkspaceController.createWorkspace);

@@ -5,24 +5,24 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.use(authenticateToken);
-
-router.get('/workspace/:workspaceId', ArticleController.getArticlesByWorkspace);
-router.get('/:id', ArticleController.getArticleById);
-router.get('/:id/versions', ArticleController.getArticleVersions);
+router.get('/workspace/:workspaceId', authenticateToken, ArticleController.getArticlesByWorkspace);
+router.get('/:id', authenticateToken, ArticleController.getArticleById);
+router.get('/:id/versions', authenticateToken, ArticleController.getArticleVersions);
 
 router.post(
   '/',
+  authenticateToken,
   multerMiddleware.array('files'),
   ArticleController.createArticle
 );
 
 router.put(
   '/:id',
+  authenticateToken,
   multerMiddleware.array('files'),
   ArticleController.updateArticle
 );
 
-router.delete('/:id', ArticleController.deleteArticle);
+router.delete('/:id', authenticateToken, ArticleController.deleteArticle);
 
 export default router;
