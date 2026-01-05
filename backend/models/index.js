@@ -2,10 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import { Sequelize } from 'sequelize';
 import { fileURLToPath } from 'url';
-import configFile from '../config/config.js';
+import configFile from '../config/config.cjs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = path.dirname(currentFilePath);
 
 const env = process.env.NODE_ENV || 'development';
 const config = configFile[env];
@@ -23,11 +23,13 @@ import { Article } from './article.js';
 import { ArticleVersion } from './articleVersion.js';
 import { Comment } from './comment.js';
 import { Workspace } from './workspace.js';
+import { User } from './user.js';
 
 db.Article = Article;
 db.ArticleVersion = ArticleVersion;
 db.Comment = Comment;
 db.Workspace = Workspace;
+db.User = User;
 
 Object.values(db).forEach(model => {
     if (model.associate) {

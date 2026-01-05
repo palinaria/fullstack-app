@@ -14,6 +14,7 @@ export const register = async (req, res) => {
     await User.create({ email, password: hashedPassword });
     res.status(201).json({ message: 'Регистрация успешна' });
   } catch (err) {
+    console.error('Ошибка при регистрации пользователя:', err);
     res.status(400).json({ message: 'Email уже зарегистрирован или данные неверны' });
   }
 };
@@ -35,6 +36,7 @@ export const login = async (req, res) => {
 
     res.json({ token });
   } catch (err) {
+    console.error('Ошибка при входе в систему:', err);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 };

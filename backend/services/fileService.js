@@ -3,10 +3,10 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-const currentFile = fileURLToPath(import.meta.url);
-const currentDir = path.dirname(currentFile);
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = path.dirname(currentFilePath);
 
-export const uploadFolder = path.join(currentDir, '../uploads');
+export const uploadFolder = path.join(currentDirPath, '../uploads');
 if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder);
 
 const storage = multer.diskStorage({
@@ -22,7 +22,6 @@ export const upload = multer({
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
-
             cb(new Error('Неверный формат файла. Разрешены только JPG, PNG и PDF.'));
         }
     }
