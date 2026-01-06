@@ -12,23 +12,32 @@ export class Article extends Model {
             foreignKey: 'currentVersionId',
             as: 'currentVersion'
         });
+
+        Article.belongsTo(models.User, {
+            foreignKey: 'authorId',
+            as: 'author'
+        });
     }
 }
 
 Article.init(
-    {
-        workspaceId: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        currentVersionId: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        }
-    },
-    {
-        sequelize,
-        modelName: 'Article',
-        tableName: 'Articles'
-    }
+  {
+      workspaceId: {
+          type: DataTypes.INTEGER,
+          allowNull: false
+      },
+      currentVersionId: {
+          type: DataTypes.INTEGER,
+          allowNull: true
+      },
+      authorId: {
+          type: DataTypes.INTEGER,
+          allowNull: false
+      }
+  },
+  {
+      sequelize,
+      modelName: 'Article',
+      tableName: 'Articles'
+  }
 );
