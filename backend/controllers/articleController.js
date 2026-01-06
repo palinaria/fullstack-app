@@ -14,6 +14,7 @@ export const getArticlesByWorkspace = async (req, res) => {
         const formattedArticles = articles.map(article => ({
             id: article.id,
             workspaceId: article.workspaceId,
+            authorId: article.authorId,
             title: article.currentVersion?.title || 'Без названия',
             content: article.currentVersion?.content || 'Без описания',
             currentVersion: article.currentVersion
@@ -42,7 +43,7 @@ export const getArticleById = async (req, res) => {
                 if (oldVersion) { articleData = oldVersion; isReadonly = true; }
             }
         }
-        res.json({ id: article.id, workspaceId: article.workspaceId, currentVersion: articleData, isReadonly });
+        res.json({ id: article.id, workspaceId: article.workspaceId, authorId: article.authorId, currentVersion: articleData, isReadonly });
     } catch (err) { res.status(500).json({ message: 'Ошибка' }); }
 };
 
@@ -50,7 +51,7 @@ export const createArticle = async (req, res) => {
     const { title, content, workspaceId } = req.body;
     const files = req.files ? req.files.map(f => f.filename) : [];
     try {
-        const article = await Article.create({ workspaceId });
+        const article = await Article.create({ workspaceId, authorId: req.user.id });
         const version = await ArticleVersion.create({ articleId: article.id, version: 1, title, content, files });
         article.currentVersionId = version.id;
         await article.save();
@@ -66,6 +67,12 @@ export const updateArticle = async (req, res) => {
     try {
         const article = await Article.findByPk(id, { include: [{ model: ArticleVersion, as: 'currentVersion' }] });
         if (!article) return res.status(404).json({ message: 'Статья не найдена' });
+
+        // Проверка прав: только создатель или админ
+        if (article.authorId !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'У вас нет прав на редактирование этой статьи' });
+        }
+
         if (workspaceId) article.workspaceId = parseInt(workspaceId);
         const newVersion = await ArticleVersion.create({
             articleId: article.id,
@@ -86,6 +93,10 @@ export const deleteArticle = async (req, res) => {
     try {
         const article = await Article.findByPk(id);
         if (article) {
+            // Проверка прав: только создатель или админ
+            if (article.authorId !== req.user.id && req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'У вас нет прав на удаление этой статьи' });
+            }
             await ArticleVersion.destroy({ where: { articleId: id } });
             await article.destroy();
             broadcastNotification({ type: 'article_deleted', id });
