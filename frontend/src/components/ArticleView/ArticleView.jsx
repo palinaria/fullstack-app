@@ -9,7 +9,7 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
     const [versions, setVersions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const { token } = useAuth();
+    const { token, user } = useAuth();
 
     useEffect(() => {
         const fetchVersions = async () => {
@@ -18,7 +18,7 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
-                });
+                } );
                 if (!res.ok) throw new Error('Ошибка загрузки версий');
                 const data = await res.json();
                 setVersions(data);
@@ -46,7 +46,7 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
-            });
+            } );
             if (!res.ok) throw new Error('Ошибка загрузки версии');
             const data = await res.json();
             setSelectedVersion(data.currentVersion);
@@ -75,7 +75,7 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
                 <h3>Вложения:</h3>
                 {selectedVersion.files.map((file, index) => {
                     const fileUrl = `http://localhost:3000/uploads/${file}`;
-                    const lower = file.toLowerCase();
+                    const lower = file.toLowerCase( );
                     const isImage = lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png');
                     const isPDF = lower.endsWith('.pdf');
                     return (
@@ -89,7 +89,7 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
             </div>
           )}
           <ArticleVersionsList versions={versions} currentVersionNumber={selectedVersion.version} onSelect={handleVersionSelect} />
-          {!isReadonly && (
+          {!isReadonly && (user?.role === 'admin' || user?.id === article.authorId) && (
             <div className="edit-button-container">
                 <button onClick={() => onUpdate(article)}>Edit</button>
                 <button onClick={() => onDelete(article.id)}>Delete</button>
