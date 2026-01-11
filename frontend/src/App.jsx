@@ -73,15 +73,27 @@ const MainAppContent = () => {
 
   const handleFormSubmit = (updated) => {
     setEditingArticle(null);
-    if (updated.workspaceId !== selectedWorkspace) {
-      setArticles(prev => prev.filter(a => a.id !== updated.id));
+
+
+    const fullUpdatedArticle = {
+      ...updated,
+      authorId: updated.authorId || selectedArticle?.authorId
+    };
+
+    if (fullUpdatedArticle.workspaceId !== selectedWorkspace) {
+      setArticles(prev => prev.filter(a => a.id !== fullUpdatedArticle.id));
       setSelectedArticle(null);
     } else {
       setArticles(prev => {
-        const exists = prev.find(a => a.id === updated.id);
-        return exists ? prev.map(a => a.id === updated.id ? updated : a) : [...prev, updated];
+        const exists = prev.find(a => a.id === fullUpdatedArticle.id);
+        return exists
+          ? prev.map(a => a.id === fullUpdatedArticle.id ? fullUpdatedArticle : a)
+          : [...prev, fullUpdatedArticle];
       });
-      if (selectedArticle?.id === updated.id) setSelectedArticle(updated);
+
+      if (selectedArticle?.id === fullUpdatedArticle.id) {
+        setSelectedArticle(fullUpdatedArticle);
+      }
     }
   };
 
@@ -126,10 +138,12 @@ const MainAppContent = () => {
     <div className="app-container">
       <header className="app-header">
         <div className="header-left"></div>
+
         <h1 className="header-title">My Articles</h1>
+
         <div className="header-right">
           <div className="user-info">
-            <span>{user?.email} ({user?.role})</span>
+            <span className="user-email-label">{user?.email} ({user?.role})</span>
             <button onClick={logout} className="logout-btn">Выйти</button>
             {user?.role === 'admin' && (
               <button className="admin-btn" onClick={() => setView(view === 'articles' ? 'users' : 'articles')}>
