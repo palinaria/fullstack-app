@@ -35,7 +35,7 @@ const MainAppContent = () => {
 
   const fetchWorkspaces = async () => {
     try {
-      const res = await fetch('http://localhost:3000/workspaces', { headers: getHeaders(  ) });
+      const res = await fetch('http://localhost:3000/workspaces', { headers: getHeaders( ) });
       if (res.status === 401 || res.status === 403) return logout();
       const data = await res.json();
       setWorkspaces(data);
@@ -51,7 +51,7 @@ const MainAppContent = () => {
     if (!selectedWorkspace || !token) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`, { headers: getHeaders(  ) });
+      const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`, { headers: getHeaders( ) });
       if (res.status === 401 || res.status === 403) return logout();
       const data = await res.json();
       setArticles(Array.isArray(data) ? data : []);
@@ -63,10 +63,10 @@ const MainAppContent = () => {
   const handleSelectArticle = async (article) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/articles/${article.id}`, { headers: getHeaders(  ) });
+      const res = await fetch(`http://localhost:3000/articles/${article.id}`, { headers: getHeaders( ) });
       const data = await res.json();
       setSelectedArticle(data);
-      const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}?versionId=${data.currentVersion.id}`, { headers: getHeaders(  ) });
+      const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}`, { headers: getHeaders( ) });
       setComments(await commentsRes.json());
     } catch (err) { alert('Ошибка загрузки'); } finally { setLoading(false); }
   };
@@ -85,17 +85,21 @@ const MainAppContent = () => {
     }
   };
 
-  const handleCommentSubmit = async ({ text, articleId, versionId, id }) => {
+  const handleCommentSubmit = async ({ text, articleId, id }) => {
     const method = id ? 'PUT' : 'POST';
     const url = id ? `http://localhost:3000/comments/${id}` : 'http://localhost:3000/comments';
     const res = await fetch(url, {
       method,
-      headers: getHeaders(  ),
-      body: JSON.stringify({ text, articleId, versionId, workspaceId: selectedWorkspace })
+      headers: getHeaders( ),
+      body: JSON.stringify({ text, articleId, workspaceId: selectedWorkspace })
     });
     const data = await res.json();
-    setComments(prev => id ? prev.map(c => c.id === id ? data : c) : [...prev, data]);
-    if (id) setEditingComment(null);
+    if (res.ok) {
+      setComments(prev => id ? prev.map(c => c.id === id ? data : c) : [...prev, data]);
+      if (id) setEditingComment(null);
+    } else {
+      alert(data.message);
+    }
   };
 
   useEffect(() => {
@@ -120,16 +124,19 @@ const MainAppContent = () => {
 
   return (
     <div className="app-container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>My Articles</h1>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {user?.role === 'admin' && (
-            <button onClick={() => setView(view === 'articles' ? 'users' : 'articles')}>
-              {view === 'articles' ? 'Управление пользователями' : 'К статьям'}
-            </button>
-          )}
-          <span>{user?.email} ({user?.role})</span>
-          <button onClick={logout} className="logout-btn">Выйти</button>
+      <header className="app-header">
+        <div className="header-left"></div>
+        <h1 className="header-title">My Articles</h1>
+        <div className="header-right">
+          <div className="user-info">
+            <span>{user?.email} ({user?.role})</span>
+            <button onClick={logout} className="logout-btn">Выйти</button>
+            {user?.role === 'admin' && (
+              <button className="admin-btn" onClick={() => setView(view === 'articles' ? 'users' : 'articles')}>
+                {view === 'articles' ? 'Управление пользователями' : 'К статьям'}
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -164,32 +171,35 @@ const MainAppContent = () => {
             workspaces={workspaces}
             onBack={() => setSelectedArticle(null)}
             onDelete={id => {
-              fetch(`http://localhost:3000/articles/${id}`, { method:'DELETE', headers: getHeaders(  ) });
+              fetch(`http://localhost:3000/articles/${id}`, { method:'DELETE', headers: getHeaders( ) });
               setSelectedArticle(null);
               fetchArticles();
             }}
             onUpdate={setEditingArticle}
-            onVersionChange={async vid => {
-              const r = await fetch(`http://localhost:3000/comments/article/${selectedArticle.id}?versionId=${vid}`, { headers: getHeaders(  ) });
-              setComments(await r.json());
-            }}
           />
-          <CommentList
-            comments={comments}
-            onEdit={setEditingComment}
-            onDelete={id => {
-              fetch(`http://localhost:3000/comments/${id}`, { method:'DELETE', headers: getHeaders(  ) });
-              setComments(prev => prev.filter(c => c.id !== id));
-            }}
-          />
-          <CommentForm
-            onSubmit={(data) => handleCommentSubmit({ ...data, versionId: selectedArticle.currentVersion.id })}
-            articleId={selectedArticle.id}
-            workspaceId={selectedWorkspace}
-            commentToEdit={editingComment}
-            onCancel={() => setEditingComment(null)}
-          />
-
+          <div className="comments-section">
+            <h3>Комментарии</h3>
+            <CommentList
+              comments={comments}
+              onEdit={setEditingComment}
+              onDelete={async id => {
+                const res = await fetch(`http://localhost:3000/comments/${id}`, { method:'DELETE', headers: getHeaders( ) });
+                if (res.ok) setComments(prev => prev.filter(c => c.id !== id));
+                else {
+                  const data = await res.json();
+                  alert(data.message);
+                }
+              }}
+              currentUser={user}
+            />
+            <CommentForm
+              onSubmit={(data) => handleCommentSubmit(data)}
+              articleId={selectedArticle.id}
+              workspaceId={selectedWorkspace}
+              commentToEdit={editingComment}
+              onCancel={() => setEditingComment(null)}
+            />
+          </div>
         </>
       )}
       {editingArticle && (
