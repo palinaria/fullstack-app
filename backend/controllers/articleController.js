@@ -68,7 +68,6 @@ export const updateArticle = async (req, res) => {
         const article = await Article.findByPk(id, { include: [{ model: ArticleVersion, as: 'currentVersion' }] });
         if (!article) return res.status(404).json({ message: 'Статья не найдена' });
 
-        // Проверка прав: только создатель или админ
         if (article.authorId !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'У вас нет прав на редактирование этой статьи' });
         }
@@ -93,7 +92,6 @@ export const deleteArticle = async (req, res) => {
     try {
         const article = await Article.findByPk(id);
         if (article) {
-            // Проверка прав: только создатель или админ
             if (article.authorId !== req.user.id && req.user.role !== 'admin') {
                 return res.status(403).json({ message: 'У вас нет прав на удаление этой статьи' });
             }
