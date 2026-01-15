@@ -36,7 +36,7 @@ const MainAppContent = () => {
   const fetchWorkspaces = async () => {
     try {
       const res = await fetch('http://localhost:3000/workspaces', { headers: getHeaders( ) });
-      if (res.status === 401 || res.status === 403) return logout();
+      if (res.status === 401 || res.status === 403) return handleLogout();
       const data = await res.json();
       setWorkspaces(data);
       if (!selectedWorkspace && data.length > 0) setSelectedWorkspace(data[0].id);
@@ -52,7 +52,7 @@ const MainAppContent = () => {
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`, { headers: getHeaders( ) });
-      if (res.status === 401 || res.status === 403) return logout();
+      if (res.status === 401 || res.status === 403) return handleLogout();
       const data = await res.json();
       setArticles(Array.isArray(data) ? data : []);
     } catch (err) { setArticles([]); } finally { setLoading(false); }
@@ -128,6 +128,27 @@ const MainAppContent = () => {
   }, [selectedWorkspace, token]);
 
 
+  const handleLogout = () => {
+
+    setView('articles');
+    setSelectedArticle(null);
+    setEditingArticle(null);
+    setSelectedWorkspace(null);
+    setArticles([]);
+    setWorkspaces([]);
+    setComments([]);
+    setNotifications([]);
+    setEditingComment(null);
+    logout();
+  };
+
+
+  useEffect(() => {
+    if (token) {
+      setView('articles');
+    }
+  }, [token]);
+
   if (!token) {
     return isRegister
       ? <Register onSwitch={() => setIsRegister(false)} />
@@ -144,7 +165,7 @@ const MainAppContent = () => {
         <div className="header-right">
           <div className="user-info">
             <span className="user-email-label">{user?.email} ({user?.role})</span>
-            <button onClick={logout} className="logout-btn">Выйти</button>
+            <button onClick={handleLogout} className="logout-btn">Выйти</button>
             {user?.role === 'admin' && (
               <button className="admin-btn" onClick={() => setView(view === 'articles' ? 'users' : 'articles')}>
                 {view === 'articles' ? 'Управление пользователями' : 'К статьям'}
