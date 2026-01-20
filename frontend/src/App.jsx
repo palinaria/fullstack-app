@@ -35,7 +35,7 @@ const MainAppContent = () => {
 
   const fetchWorkspaces = async () => {
     try {
-      const res = await fetch('http://localhost:3000/workspaces', { headers: getHeaders( ) });
+      const res = await fetch('http://localhost:3000/workspaces', { headers: getHeaders(  ) });
       if (res.status === 401 || res.status === 403) return handleLogout();
       const data = await res.json();
       setWorkspaces(data);
@@ -51,11 +51,36 @@ const MainAppContent = () => {
     if (!selectedWorkspace || !token) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`, { headers: getHeaders( ) });
+      const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`, { headers: getHeaders(  ) });
       if (res.status === 401 || res.status === 403) return handleLogout();
       const data = await res.json();
       setArticles(Array.isArray(data) ? data : []);
     } catch (err) { setArticles([]); } finally { setLoading(false); }
+  };
+
+  const handleSearch = async (query) => {
+    if (!selectedWorkspace || !token) return;
+
+    if (!query || query.trim() === '') {
+      fetchArticles();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `http://localhost:3000/articles/workspace/${selectedWorkspace}/search?query=${encodeURIComponent(query )}`,
+        { headers: getHeaders() }
+      );
+      if (res.status === 401 || res.status === 403) return handleLogout();
+      const data = await res.json();
+      setArticles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Search error:', err);
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchArticles(); }, [selectedWorkspace, token]);
@@ -63,10 +88,10 @@ const MainAppContent = () => {
   const handleSelectArticle = async (article) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/articles/${article.id}`, { headers: getHeaders( ) });
+      const res = await fetch(`http://localhost:3000/articles/${article.id}`, { headers: getHeaders(  ) });
       const data = await res.json();
       setSelectedArticle(data);
-      const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}`, { headers: getHeaders( ) });
+      const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}`, { headers: getHeaders(  ) });
       setComments(await commentsRes.json());
     } catch (err) { alert('Ошибка загрузки'); } finally { setLoading(false); }
   };
@@ -102,7 +127,7 @@ const MainAppContent = () => {
     const url = id ? `http://localhost:3000/comments/${id}` : 'http://localhost:3000/comments';
     const res = await fetch(url, {
       method,
-      headers: getHeaders( ),
+      headers: getHeaders(  ),
       body: JSON.stringify({ text, articleId, workspaceId: selectedWorkspace })
     });
     const data = await res.json();
@@ -196,7 +221,7 @@ const MainAppContent = () => {
         <UserManagement />
       ) : !selectedArticle ? (
         <>
-          <ArticleList articles={articles} onSelect={handleSelectArticle} />
+          <ArticleList articles={articles} onSelect={handleSelectArticle} onSearch={handleSearch} />
           <ArticleForm onSubmit={handleFormSubmit} workspaceId={selectedWorkspace} workspaces={workspaces} />
         </>
       ) : !editingArticle && (
@@ -206,7 +231,7 @@ const MainAppContent = () => {
             workspaces={workspaces}
             onBack={() => setSelectedArticle(null)}
             onDelete={id => {
-              fetch(`http://localhost:3000/articles/${id}`, { method:'DELETE', headers: getHeaders( ) });
+              fetch(`http://localhost:3000/articles/${id}`, { method:'DELETE', headers: getHeaders(  ) });
               setSelectedArticle(null);
               fetchArticles();
             }}
@@ -218,7 +243,7 @@ const MainAppContent = () => {
               comments={comments}
               onEdit={setEditingComment}
               onDelete={async id => {
-                const res = await fetch(`http://localhost:3000/comments/${id}`, { method:'DELETE', headers: getHeaders( ) });
+                const res = await fetch(`http://localhost:3000/comments/${id}`, { method:'DELETE', headers: getHeaders(  ) });
                 if (res.ok) setComments(prev => prev.filter(c => c.id !== id));
                 else {
                   const data = await res.json();

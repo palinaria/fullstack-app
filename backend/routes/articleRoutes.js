@@ -6,6 +6,7 @@ import { authenticateToken } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.get('/workspace/:workspaceId', authenticateToken, ArticleController.getArticlesByWorkspace);
+router.get('/workspace/:workspaceId/search', authenticateToken, ArticleController.searchArticles);
 router.get('/:id', authenticateToken, ArticleController.getArticleById);
 router.get('/:id/versions', authenticateToken, ArticleController.getArticleVersions);
 
