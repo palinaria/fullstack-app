@@ -32,8 +32,10 @@ export const searchArticles = async (req, res) => {
     const { query } = req.query;
 
     if (!workspaceId) return res.status(400).json({ message: 'Не указан workspaceId' });
+
+
     if (!query || query.trim() === '') {
-        return res.status(400).json({ message: 'Поисковый запрос не может быть пустым' });
+        return res.json([]);
     }
 
     try {

@@ -1,50 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ArticleList.css';
 
 const ArticleList = ({ articles, onSelect, onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearched, setIsSearched] = useState(false);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (onSearch) {
+        onSearch(searchQuery);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, onSearch]);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault(); // Предотвращаем перезагрузку страницы
-    if (onSearch && searchQuery.trim() !== '') {
-      onSearch(searchQuery);
-      setIsSearched(true);
-    }
-  };
-
   const handleClearSearch = () => {
     setSearchQuery('');
-    setIsSearched(false);
-    if (onSearch) {
-      onSearch('');
-    }
   };
 
   return (
     <div className="article-list-container">
-      <form onSubmit={handleSearchSubmit} className="search-form">
+      <div className="search-container">
         <input
           type="text"
-          placeholder="Поиск по названию или содержанию..."
+          placeholder="Начните вводить название или текст статьи..."
           value={searchQuery}
           onChange={handleSearchChange}
           className="search-input"
         />
-        <button type="submit" className="search-button">Поиск</button>
-
-        {(isSearched || searchQuery) && (
-          <button type="button" onClick={handleClearSearch} className="clear-button">
-            {isSearched ? 'Назад ко всем статьям' : 'Очистить'}
+        {searchQuery && (
+          <button type="button" onClick={handleClearSearch} className="clear-button-inline">
+            ✕
           </button>
         )}
-      </form>
+      </div>
 
-      {isSearched && <p className="search-results-info">Результаты поиска для: "<strong>{searchQuery}</strong>"</p>}
+      {searchQuery && (
+        <p className="search-results-info">
+          Поиск по запросу: "<strong>{searchQuery}</strong>"
+        </p>
+      )}
 
       {!articles || articles.length === 0 ? (
         <p className="empty">Статей не найдено</p>
