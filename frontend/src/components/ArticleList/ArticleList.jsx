@@ -1,26 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './ArticleList.css';
 
 const ArticleList = ({ articles, onSelect, onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const timerRef = useRef(null);
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (onSearch) {
-        onSearch(searchQuery);
-      }
+  const runSearchDebounced = (value) => {
+
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+
+    timerRef.current = setTimeout(() => {
+      if (onSearch) onSearch(value);
     }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, onSearch]);
+  };
 
   const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
+    const value = e.target.value;
+    setSearchQuery(value);
+    runSearchDebounced(value);
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (onSearch) onSearch('');
   };
+
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   return (
     <div className="article-list-container">
@@ -53,7 +65,7 @@ const ArticleList = ({ articles, onSelect, onSearch }) => {
             <div key={article.id} className="article-item">
               <h3>{article.title}</h3>
               <p>{article.content}</p>
-              <button onClick={() => onSelect(article)}>View</button>
+              <button type="button" onClick={() => onSelect(article)}>View</button>
             </div>
           ))}
         </div>

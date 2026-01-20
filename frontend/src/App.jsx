@@ -26,7 +26,7 @@ const MainAppContent = () => {
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
-  // Используем useCallback для стабильности функций
+
   const handleLogout = useCallback(() => {
     setView('articles');
     setSelectedArticle(null);
@@ -101,7 +101,6 @@ const MainAppContent = () => {
     if (token && selectedWorkspace) fetchArticles();
   }, [token, selectedWorkspace, fetchArticles]);
 
-  // WebSocket с защитой от лишних переподключений
   useEffect(() => {
     if (!token || !selectedWorkspace) return;
 
