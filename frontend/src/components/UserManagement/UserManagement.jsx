@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext.jsx';
+import API_URL from '../../../apiConfig.js';
 import './UserManagement.css';
 
 const UserManagement = () => {
@@ -14,7 +15,7 @@ const UserManagement = () => {
       setError('');
       setLoading(true);
 
-      const res = await fetch('http://localhost:3000/auth/users', {
+      const res = await fetch(`${API_URL}/auth/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -41,7 +42,7 @@ const UserManagement = () => {
   const handleRoleChange = async (userId, newRole) => {
     try {
       const res = await fetch(
-        `http://localhost:3000/auth/users/${userId}/role`,
+        `${API_URL}/auth/users/${userId}/role`,
         {
           method: 'PUT',
           headers: {

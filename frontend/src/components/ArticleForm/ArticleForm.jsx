@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../../context/AuthContext.jsx'; // Добавлен импорт контекста
+import { useAuth } from '../../../context/AuthContext.jsx';
+import API_URL from '../../../apiConfig.js';
 import './ArticleForm.css';
 
 const ArticleForm = ({ onSubmit, articleToEdit, workspaceId, articleId, workspaces }) => {
-    const { token } = useAuth(); // Получаем токен из контекста
+    const { token } = useAuth();
     const [title, setTitle] = useState(articleToEdit?.title || '');
     const [content, setContent] = useState(articleToEdit?.content || '');
     const [selectedWS, setSelectedWS] = useState(workspaceId);
@@ -23,14 +24,14 @@ const ArticleForm = ({ onSubmit, articleToEdit, workspaceId, articleId, workspac
         formData.append('workspaceId', selectedWS);
         files.forEach(f => formData.append('files', f));
 
-        const url = articleToEdit ? `http://localhost:3000/articles/${articleId}` : 'http://localhost:3000/articles';
+        const url = articleToEdit ? `${API_URL}/articles/${articleId}` : `${API_URL}/articles`;
 
         try {
             const res = await fetch(url, {
                 method: articleToEdit ? 'PUT' : 'POST',
                 body: formData,
                 headers: {
-                    // ВАЖНО: Добавляем токен в заголовки
+
                     'Authorization': `Bearer ${token}`
                 }
             } );
@@ -47,7 +48,7 @@ const ArticleForm = ({ onSubmit, articleToEdit, workspaceId, articleId, workspac
             setContent('');
             setFiles([]);
 
-            // Сброс поля выбора файлов
+
             const fileInput = e.target.querySelector('input[type="file"]');
             if (fileInput) fileInput.value = '';
 

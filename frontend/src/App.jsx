@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
+import API_URL from '../apiConfig.js';
 import Login from './components/Login/Login.jsx';
 import Register from './components/Register/Register.jsx';
 import ArticleList from './components/ArticleList/ArticleList.jsx';
@@ -48,7 +49,7 @@ const MainAppContent = () => {
   const fetchWorkspaces = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch('http://localhost:3000/workspaces', { headers: getHeaders( ) });
+      const res = await fetch(`${API_URL}/workspaces`, { headers: getHeaders() });
       if (res.status === 401 || res.status === 403) return handleLogout();
       const data = await res.json();
       setWorkspaces(data);
@@ -60,7 +61,7 @@ const MainAppContent = () => {
     if (!selectedWorkspace || !token) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`, { headers: getHeaders( ) });
+      const res = await fetch(`${API_URL}/articles/workspace/${selectedWorkspace}`, { headers: getHeaders() });
       if (res.status === 401 || res.status === 403) return handleLogout();
       const data = await res.json();
       setArticles(Array.isArray(data) ? data : []);
@@ -81,7 +82,7 @@ const MainAppContent = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/articles/workspace/${selectedWorkspace}/search?query=${encodeURIComponent(query )}`,
+        `${API_URL}/articles/workspace/${selectedWorkspace}/search?query=${encodeURIComponent(query)}`,
         { headers: getHeaders() }
       );
       if (res.status === 401 || res.status === 403) return handleLogout();
@@ -104,7 +105,7 @@ const MainAppContent = () => {
   useEffect(() => {
     if (!token || !selectedWorkspace) return;
 
-    const ws = new WebSocket('ws://localhost:3000');
+    const ws = new WebSocket(API_URL.replace('http', 'ws' ));
 
     ws.onmessage = e => {
       const msg = JSON.parse(e.data);
@@ -128,10 +129,10 @@ const MainAppContent = () => {
   const handleSelectArticle = async (article) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/articles/${article.id}`, { headers: getHeaders( ) });
+      const res = await fetch(`${API_URL}/articles/${article.id}`, { headers: getHeaders() });
       const data = await res.json();
       setSelectedArticle(data);
-      const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}`, { headers: getHeaders( ) });
+      const commentsRes = await fetch(`${API_URL}/comments/article/${data.id}`, { headers: getHeaders() });
       setComments(await commentsRes.json());
     } catch (err) { alert('Ошибка загрузки'); } finally { setLoading(false); }
   };
@@ -161,10 +162,10 @@ const MainAppContent = () => {
 
   const handleCommentSubmit = async ({ text, articleId, id }) => {
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `http://localhost:3000/comments/${id}` : 'http://localhost:3000/comments';
+    const url = id ? `${API_URL}/comments/${id}` : `${API_URL}/comments`;
     const res = await fetch(url, {
       method,
-      headers: getHeaders( ),
+      headers: getHeaders(),
       body: JSON.stringify({ text, articleId, workspaceId: selectedWorkspace })
     });
     const data = await res.json();
@@ -231,7 +232,7 @@ const MainAppContent = () => {
             workspaces={workspaces}
             onBack={() => setSelectedArticle(null)}
             onDelete={id => {
-              fetch(`http://localhost:3000/articles/${id}`, { method:'DELETE', headers: getHeaders( ) });
+              fetch(`${API_URL}/articles/${id}`, { method:'DELETE', headers: getHeaders() });
               setSelectedArticle(null);
               fetchArticles();
             }}
@@ -243,7 +244,7 @@ const MainAppContent = () => {
               comments={comments}
               onEdit={setEditingComment}
               onDelete={async id => {
-                const res = await fetch(`http://localhost:3000/comments/${id}`, { method:'DELETE', headers: getHeaders( ) });
+                const res = await fetch(`${API_URL}/comments/${id}`, { method:'DELETE', headers: getHeaders() });
                 if (res.ok) setComments(prev => prev.filter(c => c.id !== id));
                 else {
                   const data = await res.json();

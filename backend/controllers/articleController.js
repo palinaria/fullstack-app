@@ -1,10 +1,12 @@
 import { Article } from '../models/article.js';
 import { ArticleVersion } from '../models/articleVersion.js';
 import { Comment } from '../models/comment.js';
+import { User } from '../models/user.js';
 import { broadcastNotification } from '../utils/ws.js';
 import { Op } from 'sequelize';
+import { jsPDF } from 'jspdf';
 
-export const getArticlesByWorkspace = async (req, res) => {
+export const getArticlesByWorkspace = async (req, res ) => {
     const { workspaceId } = req.params;
     if (!workspaceId) return res.status(400).json({ message: 'Не указан workspaceId' });
     try {
@@ -32,7 +34,6 @@ export const searchArticles = async (req, res) => {
     const { query } = req.query;
 
     if (!workspaceId) return res.status(400).json({ message: 'Не указан workspaceId' });
-
 
     if (!query || query.trim() === '') {
         return res.json([]);
@@ -152,4 +153,46 @@ export const getArticleVersions = async (req, res) => {
         const versions = await ArticleVersion.findAll({ where: { articleId: id }, order: [['version', 'DESC']] });
         res.json(versions);
     } catch (err) { res.status(500).json({ message: 'Ошибка' }); }
+};
+
+export const exportArticlePDF = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const article = await Article.findByPk(id, {
+            include: [
+                { model: ArticleVersion, as: 'currentVersion' },
+                { model: User, as: 'author', attributes: ['email'] }
+            ]
+        });
+
+        if (!article) return res.status(404).json({ message: 'Статья не найдена' });
+
+        const doc = new jsPDF();
+        const title = article.currentVersion?.title || 'Без названия';
+        const content = article.currentVersion?.content || 'Без описания';
+        const author = article.author?.email || 'Неизвестен';
+        const date = new Date(article.createdAt).toLocaleDateString();
+
+        doc.setFontSize(20);
+        doc.text(title, 10, 20);
+
+        doc.setFontSize(12);
+        doc.text(`Автор: ${author}`, 10, 30);
+        doc.text(`Дата создания: ${date}`, 10, 37);
+
+        doc.setLineWidth(0.5);
+        doc.line(10, 42, 200, 42);
+
+        doc.setFontSize(14);
+        const splitContent = doc.splitTextToSize(content, 180);
+        doc.text(splitContent, 10, 52);
+
+        const pdfBuffer = doc.output('arraybuffer');
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=article-${id}.pdf`);
+        res.send(Buffer.from(pdfBuffer));
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Ошибка при генерации PDF' });
+    }
 };

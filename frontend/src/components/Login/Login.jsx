@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext.jsx';
+import API_URL from '../../../apiConfig.js';
 import '../Auth.css';
 
 const Login = ({ onSwitch }) => {
@@ -10,7 +11,7 @@ const Login = ({ onSwitch }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3000/auth/login', {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password } )

@@ -41,3 +41,24 @@
     background: #e2e6ea;
     color: #000000;
 }
+
+.article-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.export-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.export-button:hover {
+    background-color: #218838;
+}

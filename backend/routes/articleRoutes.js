@@ -9,6 +9,8 @@ router.get('/workspace/:workspaceId', authenticateToken, ArticleController.getAr
 router.get('/workspace/:workspaceId/search', authenticateToken, ArticleController.searchArticles);
 router.get('/:id', authenticateToken, ArticleController.getArticleById);
 router.get('/:id/versions', authenticateToken, ArticleController.getArticleVersions);
+router.get('/:id/export-pdf', authenticateToken, ArticleController.exportArticlePDF);
+
 
 router.post(
   '/',

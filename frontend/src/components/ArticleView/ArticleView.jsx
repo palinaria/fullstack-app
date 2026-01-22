@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ArticleVersionsList from '../ArticleVersionsList/ArticleVersionsList.jsx';
 import { useAuth } from '../../../context/AuthContext.jsx';
+import API_URL from '../../../apiConfig.js';
 import './ArticleView.css';
 
 const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
@@ -15,7 +16,7 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
     useEffect(() => {
         const fetchVersions = async () => {
             try {
-                const res = await fetch(`http://localhost:3000/articles/${article.id}/versions`, {
+                const res = await fetch(`${API_URL}/articles/${article.id}/versions`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -46,7 +47,7 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch(`http://localhost:3000/articles/${article.id}?version=${versionNumber}`, {
+            const res = await fetch(`${API_URL}/articles/${article.id}?version=${versionNumber}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -69,7 +70,27 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
 
     return (
       <div className="article-view-container">
-          <button className="back-button" onClick={onBack}>Back</button>
+          <div className="article-view-header">
+              <button className="back-button" onClick={onBack}>Back</button>
+              <button className="export-button" onClick={async () => {
+                  try {
+                      const res = await fetch(`${API_URL}/articles/${article.id}/export-pdf`, {
+                          headers: { 'Authorization': `Bearer ${token}` }
+                      });
+                      if (!res.ok) throw new Error('Ошибка экспорта');
+                      const blob = await res.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `article-${article.id}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                  } catch (err) {
+                      alert('Не удалось экспортировать PDF');
+                  }
+              }}>Export as PDF</button>
+          </div>
 
           {isReadonly && (
             <div className="readonly-banner">
@@ -89,7 +110,7 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
             <div className="attachments">
                 <h3>Вложения:</h3>
                 {selectedVersion.files.map((file, index) => {
-                    const fileUrl = `http://localhost:3000/uploads/${file}`;
+                    const fileUrl = `${API_URL}/uploads/${file}`;
                     const lower = file.toLowerCase( );
                     const isImage = lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png');
                     const isPDF = lower.endsWith('.pdf');

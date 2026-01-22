@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../context/AuthContext.jsx';
+import API_URL from '../../../../apiConfig.js';
 import './WorkspaceForm.css'
 
 const WorkspaceForm = ({ workspace, onClose }) => {
@@ -16,7 +17,7 @@ const WorkspaceForm = ({ workspace, onClose }) => {
         e.preventDefault();
         try {
             if (workspace) {
-                await fetch(`http://localhost:3000/workspaces/${workspace.id}`, {
+                await fetch(`${API_URL}/workspaces/${workspace.id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -25,7 +26,7 @@ const WorkspaceForm = ({ workspace, onClose }) => {
                     body: JSON.stringify({ name, description })
                 });
             } else {
-                await fetch('http://localhost:3000/workspaces', {
+                await fetch(`${API_URL}/workspaces`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
