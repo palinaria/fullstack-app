@@ -1,5 +1,5 @@
 import { Article } from '../models/article.js';
-import { ArticleVersion } from '../models/ArticleVersion.js';
+import { ArticleVersion } from '../models/articleVersion.js';
 import { Comment } from '../models/comment.js';
 import { broadcastNotification } from '../utils/ws.js';
 
