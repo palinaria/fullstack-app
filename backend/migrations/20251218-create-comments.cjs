@@ -15,11 +15,17 @@ module.exports = {
             },
             articleId: {
                 type: Sequelize.INTEGER,
-                allowNull: false
+                allowNull: false,
+                references: { model: 'Articles', key: 'id' },
+                onDelete: 'CASCADE',
+                onUpdate: 'CASCADE'
             },
             workspaceId: {
                 type: Sequelize.INTEGER,
-                allowNull: false
+                allowNull: false,
+                references: { model: 'Workspaces', key: 'id' },
+                onDelete: 'CASCADE',
+                onUpdate: 'CASCADE'
             },
             createdAt: {
                 allowNull: false,
@@ -31,22 +37,6 @@ module.exports = {
                 type: Sequelize.DATE,
                 defaultValue: Sequelize.literal('NOW()')
             }
-        });
-
-        await queryInterface.addConstraint('Comments', {
-            fields: ['articleId'],
-            type: 'foreign key',
-            references: { table: 'Articles', field: 'id' },
-            onDelete: 'CASCADE',
-            onUpdate: 'CASCADE'
-        });
-
-        await queryInterface.addConstraint('Comments', {
-            fields: ['workspaceId'],
-            type: 'foreign key',
-            references: { table: 'Workspaces', field: 'id' },
-            onDelete: 'CASCADE',
-            onUpdate: 'CASCADE'
         });
     },
 

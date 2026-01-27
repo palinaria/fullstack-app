@@ -5,63 +5,39 @@ import ArticleForm from './components/ArticleForm/ArticleForm.jsx';
 import CommentForm from './components/CommentForm/CommentForm.jsx';
 import CommentList from './components/CommentList/CommentList.jsx';
 import WorkspaceManager from './components/WorkspaceManager/WSManager/WorkspaceManager.jsx';
-
 import './App.css';
-import "./components/CommentForm/CommentForm.css";
-import './components/CommentList/CommenList.css';
-import './components/ArticleForm/ArticleForm.css';
-import './components/ArticleList/ArticleList.css';
-import './components/ArticleView/ArticleView.css';
 
 const App = () => {
   const [workspaces, setWorkspaces] = useState([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
-
   const [articles, setArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [editingArticle, setEditingArticle] = useState(null);
-
   const [comments, setComments] = useState([]);
   const [editingComment, setEditingComment] = useState(null);
-
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [error, setError] = useState('');
-
   const wsRef = useRef(null);
 
-  // fetch workspaces
   const fetchWorkspaces = async () => {
     try {
-      const res = await fetch('http://localhost:3000/workspaces');
+      const res = await fetch('http://localhost:3000/workspaces' );
       const data = await res.json();
       setWorkspaces(data);
       if (!selectedWorkspace && data.length > 0) setSelectedWorkspace(data[0].id);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   useEffect(() => { fetchWorkspaces(); }, []);
 
-  // articles per workspace
   const fetchArticles = async () => {
-    if (!selectedWorkspace) return; // проверка выбранного workspace
+    if (!selectedWorkspace) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}`);
+      const res = await fetch(`http://localhost:3000/articles/workspace/${selectedWorkspace}` );
       const data = await res.json();
-
-      // Проверка, чтобы files всегда был массив
-      const fixedData = data.map(article => ({
-        ...article,
-        files: Array.isArray(article.files) ? article.files : []
-      }));
-
-      setArticles(fixedData);
-    } catch (err) {
-      console.error(err);
-    } finally { setLoading(false); }
+      setArticles(Array.isArray(data) ? data : []);
+    } catch (err) { setArticles([]); } finally { setLoading(false); }
   };
 
   useEffect(() => { fetchArticles(); }, [selectedWorkspace]);
@@ -69,167 +45,83 @@ const App = () => {
   const handleSelectArticle = async (article) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3000/articles/${article.id}`);
+      const res = await fetch(`http://localhost:3000/articles/${article.id}` );
       const data = await res.json();
-
-      // Всегда массив
-      if (!Array.isArray(data.files)) data.files = [];
       setSelectedArticle(data);
-
-      const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}`);
-      const commentsData = await commentsRes.json();
-      setComments(commentsData);
-    } catch (err) {
-      console.error(err);
-    } finally { setLoading(false); }
+      const commentsRes = await fetch(`http://localhost:3000/comments/article/${data.id}?versionId=${data.currentVersion.id}` );
+      setComments(await commentsRes.json());
+    } catch (err) { alert('Ошибка загрузки'); } finally { setLoading(false); }
   };
 
-  const handleFormSubmit = (updatedArticle) => {
+  const handleFormSubmit = (updated) => {
     setEditingArticle(null);
-    setArticles(prev => {
-      const exists = prev.find(a => a.id === updatedArticle.id);
-      if (exists) {
-        if (updatedArticle.workspaceId !== selectedWorkspace) {
-          return prev.filter(a => a.id !== updatedArticle.id);
-        }
-        return prev.map(a => a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a);
-      } else {
-        return [...prev, updatedArticle];
-      }
-    });
-
-    if (selectedArticle && selectedArticle.id === updatedArticle.id) {
-      setSelectedArticle(prev => ({ ...prev, ...updatedArticle }));
-    }
-  };
-
-  // delete article
-  const handleDeleteArticle = async (id) => {
-    if (!window.confirm('Вы точно хотите удалить эту статью?')) return;
-    try {
-      const res = await fetch(`http://localhost:3000/articles/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Ошибка');
-      setArticles(prev => prev.filter(a => a.id !== id));
-      if (selectedArticle?.id === id) setSelectedArticle(null);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // comments
-  const handleCommentSubmit = async ({ text, articleId, id }) => {
-    try {
-      if (!text.trim()) return;
-      const method = id ? 'PUT' : 'POST';
-      const url = id ? `http://localhost:3000/comments/${id}` : 'http://localhost:3000/comments';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, articleId, workspaceId: selectedWorkspace })
+    if (updated.workspaceId !== selectedWorkspace) {
+      setArticles(prev => prev.filter(a => a.id !== updated.id));
+      setSelectedArticle(null);
+    } else {
+      setArticles(prev => {
+        const exists = prev.find(a => a.id === updated.id);
+        return exists ? prev.map(a => a.id === updated.id ? updated : a) : [...prev, updated];
       });
-      const data = await res.json();
-      if (id) {
-        setComments(prev => prev.map(c => c.id === id ? data : c));
-        setEditingComment(null);
-      } else {
-        setComments(prev => [...prev, data]);
-      }
-    } catch (err) { console.error(err); }
-  };
-
-  const handleCommentDelete = async (id) => {
-    if (!window.confirm('Удалить комментарий?')) return;
-    try {
-      await fetch(`http://localhost:3000/comments/${id}`, { method: 'DELETE' });
-      setComments(prev => prev.filter(c => c.id !== id));
-    } catch (err) { console.error(err); }
-  };
-
-  // websockets for notifications
-  useEffect(() => {
-    if (!wsRef.current) {
-      const connect = () => {
-        const ws = new WebSocket('ws://localhost:3000');
-        wsRef.current = ws;
-        ws.onopen = () => console.log('WS connected');
-        ws.onmessage = e => {
-          const msg = JSON.parse(e.data);
-          setNotifications(prev => [...prev, msg]);
-          if (msg.article && msg.article.workspaceId !== selectedWorkspace) return;
-          if (msg.type === 'article_created') setArticles(prev => [...prev, msg.article]);
-          if (msg.type === 'article_deleted') setArticles(prev => prev.filter(a => a.id !== msg.id));
-        };
-        ws.onclose = () => { wsRef.current = null; setTimeout(connect, 2000); };
-      };
-      connect();
+      if (selectedArticle?.id === updated.id) setSelectedArticle(updated);
     }
-  }, [selectedWorkspace]);
+  };
 
-  const showWorkspaceError = workspaces.length === 0;
+  const handleCommentSubmit = async ({ text, articleId, versionId, id }) => {
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `http://localhost:3000/comments/${id}` : 'http://localhost:3000/comments';
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, articleId, versionId, workspaceId: selectedWorkspace } )
+    });
+    const data = await res.json();
+    setComments(prev => id ? prev.map(c => c.id === id ? data : c) : [...prev, data]);
+    if (id) setEditingComment(null);
+  };
+
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:3000');
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      setNotifications(prev => [...prev, msg]);
+      if (msg.type === 'article_deleted') setArticles(prev => prev.filter(a => a.id !== msg.id));
+      else if (msg.article?.workspaceId === selectedWorkspace) fetchArticles();
+      else setArticles(prev => prev.filter(a => a.id !== msg.article?.id));
+    };
+    return () => ws.close();
+  }, [selectedWorkspace]);
 
   return (
       <div className="app-container">
         <h1>My Articles</h1>
-
-        <WorkspaceManager
-            workspaces={workspaces}
-            selectedWorkspace={selectedWorkspace}
-            onSelect={setSelectedWorkspace}
-            onChange={() => { fetchWorkspaces(); fetchArticles(); }}
-        />
-
-        {showWorkspaceError && (
-            <div className="form-error">
-              ⚠️ Сначала создайте хотя бы один workspace, чтобы добавлять статьи
-            </div>
-        )}
-
+        <WorkspaceManager workspaces={workspaces} selectedWorkspace={selectedWorkspace} onSelect={setSelectedWorkspace} onChange={() => { fetchWorkspaces(); fetchArticles(); }} />
         <div className="notifications">
           {notifications.map((n,i) => (
               <div key={i} className="notification">
-                {n.type === 'article_created' && `Новая статья: "${n.article.title}"`}
-                {n.type === 'article_updated' && `Обновлена: "${n.article.title}"`}
+                {n.type === 'article_created' && `Новая статья: "${n.article?.title}"`}
+                {n.type === 'article_updated' && `Обновлена: "${n.article?.title}"`}
                 {n.type === 'article_deleted' && `Удалена статья ID ${n.id}`}
               </div>
           ))}
         </div>
-
-        {loading && <p>Loading...</p>}
-
-        {!selectedArticle && !loading && (
+        {loading ? <p>Loading...</p> : !selectedArticle ? (
             <>
               <ArticleList articles={articles} onSelect={handleSelectArticle} />
-              {!showWorkspaceError && (
-                  <ArticleForm
-                      onSubmit={handleFormSubmit}
-                      workspaceId={selectedWorkspace}
-                      workspaces={workspaces}
-                      onCreated={() => fetchArticles()}
-                  />
-              )}
+              <ArticleForm onSubmit={handleFormSubmit} workspaceId={selectedWorkspace} workspaces={workspaces} />
             </>
-        )}
-
-        {selectedArticle && (
+        ) : !editingArticle && (
             <>
-              <ArticleView
-                  article={selectedArticle}
-                  workspaces={workspaces}
-                  onBack={() => setSelectedArticle(null)}
-                  onDelete={handleDeleteArticle}
-                  onUpdate={handleFormSubmit}
-              />
-              <CommentList comments={comments} onEdit={setEditingComment} onDelete={handleCommentDelete} />
-              <CommentForm
-                  onSubmit={handleCommentSubmit}
-                  articleId={selectedArticle.id}
-                  commentToEdit={editingComment}
-                  onCancel={() => setEditingComment(null)}
-              />
+              <ArticleView article={selectedArticle} workspaces={workspaces} onBack={() => setSelectedArticle(null)} onDelete={id => { fetch(`http://localhost:3000/articles/${id}`, {method:'DELETE'} ); setSelectedArticle(null); fetchArticles(); }} onUpdate={setEditingArticle} onVersionChange={async vid => {
+                const r = await fetch(`http://localhost:3000/comments/article/${selectedArticle.id}?versionId=${vid}` );
+                setComments(await r.json());
+              }} />
+              <CommentList comments={comments} onEdit={setEditingComment} onDelete={id => { fetch(`http://localhost:3000/comments/${id}`, {method:'DELETE'} ); setComments(prev => prev.filter(c => c.id !== id)); }} />
+              <CommentForm onSubmit={data => handleCommentSubmit({...data, versionId: selectedArticle.currentVersion.id})} articleId={selectedArticle.id} commentToEdit={editingComment} onCancel={() => setEditingComment(null)} />
             </>
         )}
+        {editingArticle && <ArticleForm articleToEdit={editingArticle.currentVersion} articleId={editingArticle.id} workspaceId={editingArticle.workspaceId} workspaces={workspaces} onSubmit={handleFormSubmit} />}
       </div>
   );
 };
-
 export default App;

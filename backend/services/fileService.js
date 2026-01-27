@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
 
-// Папка для загруженных файлов
+
 export const uploadFolder = path.join(currentDir, '../uploads');
 if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder);
 

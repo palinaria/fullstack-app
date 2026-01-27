@@ -9,27 +9,17 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      title: {
-        type: Sequelize.STRING,
-        allowNull: false
-      },
-      content: {
-        type: Sequelize.TEXT,
-        allowNull: false
-      },
-      files: {
-        type: Sequelize.JSON,
-        defaultValue: []
-      },
       workspaceId: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        references: {
-          model: 'Workspaces',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        references: { model: 'Workspaces', key: 'id' },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
+      },
+      currentVersionId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: { model: 'ArticleVersionsList', key: 'id' }
       },
       createdAt: {
         allowNull: false,
