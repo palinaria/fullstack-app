@@ -1,0 +1,92 @@
+.user-management {
+    width: 100%;
+}
+
+.um-title {
+    margin: 0 0 12px;
+}
+
+.um-message {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f6f6f6;
+}
+
+.um-message--error {
+    background: #ffecec;
+    color: #b10000;
+    border: 1px solid #ffb3b3;
+}
+
+.um-message--denied {
+    background: #fff4d6;
+    border: 1px solid #ffd17a;
+    color: #6b4e00;
+}
+
+.um-tableWrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.um-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    border: 1px solid #d9d9d9;
+}
+
+.um-table th,
+.um-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e6e6e6;
+    vertical-align: middle;
+}
+
+.um-table thead th {
+    background: #fafafa;
+    border-bottom: 1px solid #d9d9d9;
+    font-weight: 600;
+}
+
+.um-table tbody tr:hover {
+    background: #fcfcfc;
+}
+
+.um-select {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #cfcfcf;
+    background: #fff;
+}
+
+.um-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.um-hint {
+    margin-left: 10px;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.um-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid #d9d9d9;
+    background: #f6f6f6;
+}
+
+.um-badge--admin {
+    border-color: #ffd17a;
+    background: #fff4d6;
+}
+
+.um-badge--user {
+    border-color: #b3d4ff;
+    background: #eaf3ff;
+}

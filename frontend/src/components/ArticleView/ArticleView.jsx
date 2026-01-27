@@ -9,7 +9,8 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
     const [versions, setVersions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+
 
     useEffect(() => {
         const fetchVersions = async () => {
@@ -18,14 +19,17 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
-                });
+                } );
                 if (!res.ok) throw new Error('Ошибка загрузки версий');
                 const data = await res.json();
                 setVersions(data);
-            } catch (err) { setError('Не удалось загрузить версии статьи'); }
+            } catch (err) {
+                setError('Не удалось загрузить версии статьи');
+            }
         };
         fetchVersions();
-    }, [article.id, token]);
+    }, [article.id, token, article.currentVersionId]);
+
 
     useEffect(() => {
         setSelectedVersion(article.currentVersion);
@@ -46,36 +50,47 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
-            });
+            } );
             if (!res.ok) throw new Error('Ошибка загрузки версии');
             const data = await res.json();
             setSelectedVersion(data.currentVersion);
             setIsReadonly(data.isReadonly);
-        } catch (err) { setError('Не удалось загрузить выбранную версию'); } finally { setLoading(false); }
+        } catch (err) {
+            setError('Не удалось загрузить выбранную версию');
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (!selectedVersion) return <div className="article-view-container">Загрузка данных...</div>;
 
+
+    const canEdit = user?.role === 'admin' || user?.id === article.authorId;
+
     return (
       <div className="article-view-container">
           <button className="back-button" onClick={onBack}>Back</button>
+
           {isReadonly && (
             <div className="readonly-banner">
                 ⚠️ Вы просматриваете старую версию статьи (версия {selectedVersion.version}). Редактирование недоступно.
             </div>
           )}
+
           {error && <div className="error-message">{error}</div>}
           {loading && <div className="loading-message">Загрузка версии...</div>}
+
           <h2>{selectedVersion.title}</h2>
           <p><strong>Описание:</strong> {selectedVersion.content}</p>
           <p><strong>Workspace:</strong> {workspaces.find(w => w.id === article.workspaceId)?.name}</p>
           <p><strong>Версия:</strong> {selectedVersion.version}</p>
+
           {Array.isArray(selectedVersion.files) && selectedVersion.files.length > 0 && (
             <div className="attachments">
                 <h3>Вложения:</h3>
                 {selectedVersion.files.map((file, index) => {
                     const fileUrl = `http://localhost:3000/uploads/${file}`;
-                    const lower = file.toLowerCase();
+                    const lower = file.toLowerCase( );
                     const isImage = lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png');
                     const isPDF = lower.endsWith('.pdf');
                     return (
@@ -88,8 +103,15 @@ const ArticleView = ({ article, workspaces, onBack, onDelete, onUpdate }) => {
                 })}
             </div>
           )}
-          <ArticleVersionsList versions={versions} currentVersionNumber={selectedVersion.version} onSelect={handleVersionSelect} />
-          {!isReadonly && (
+
+          <ArticleVersionsList
+            versions={versions}
+            currentVersionNumber={selectedVersion.version}
+            onSelect={handleVersionSelect}
+          />
+
+
+          {!isReadonly && canEdit && (
             <div className="edit-button-container">
                 <button onClick={() => onUpdate(article)}>Edit</button>
                 <button onClick={() => onDelete(article.id)}>Delete</button>
