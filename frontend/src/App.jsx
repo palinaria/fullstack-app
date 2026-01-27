@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext.jsx';
 import Login from './components/Login/Login.jsx';
 import Register from './components/Register/Register.jsx';
@@ -25,15 +25,28 @@ const MainAppContent = () => {
   const [editingComment, setEditingComment] = useState(null);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const wsRef = useRef(null);
 
 
-  const getHeaders = () => ({
+  const handleLogout = useCallback(() => {
+    setView('articles');
+    setSelectedArticle(null);
+    setEditingArticle(null);
+    setSelectedWorkspace(null);
+    setArticles([]);
+    setWorkspaces([]);
+    setComments([]);
+    setNotifications([]);
+    setEditingComment(null);
+    logout();
+  }, [logout]);
+
+  const getHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
-  });
+  }), [token]);
 
-  const fetchWorkspaces = async () => {
+  const fetchWorkspaces = useCallback(async () => {
+    if (!token) return;
     try {
       const res = await fetch('http://localhost:3000/workspaces', { headers: getHeaders( ) });
       if (res.status === 401 || res.status === 403) return handleLogout();
@@ -41,13 +54,9 @@ const MainAppContent = () => {
       setWorkspaces(data);
       if (!selectedWorkspace && data.length > 0) setSelectedWorkspace(data[0].id);
     } catch (err) { console.error(err); }
-  };
+  }, [token, getHeaders, handleLogout, selectedWorkspace]);
 
-  useEffect(() => {
-    if (token) fetchWorkspaces();
-  }, [token]);
-
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     if (!selectedWorkspace || !token) return;
     setLoading(true);
     try {
@@ -55,10 +64,66 @@ const MainAppContent = () => {
       if (res.status === 401 || res.status === 403) return handleLogout();
       const data = await res.json();
       setArticles(Array.isArray(data) ? data : []);
-    } catch (err) { setArticles([]); } finally { setLoading(false); }
-  };
+    } catch (err) {
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedWorkspace, token, getHeaders, handleLogout]);
 
-  useEffect(() => { fetchArticles(); }, [selectedWorkspace, token]);
+  const handleSearch = useCallback(async (query) => {
+    if (!selectedWorkspace || !token) return;
+
+    if (!query || query.trim() === '') {
+      fetchArticles();
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://localhost:3000/articles/workspace/${selectedWorkspace}/search?query=${encodeURIComponent(query )}`,
+        { headers: getHeaders() }
+      );
+      if (res.status === 401 || res.status === 403) return handleLogout();
+      const data = await res.json();
+      setArticles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Search error:', err);
+      setArticles([]);
+    }
+  }, [selectedWorkspace, token, getHeaders, handleLogout, fetchArticles]);
+
+  useEffect(() => {
+    if (token) fetchWorkspaces();
+  }, [token, fetchWorkspaces]);
+
+  useEffect(() => {
+    if (token && selectedWorkspace) fetchArticles();
+  }, [token, selectedWorkspace, fetchArticles]);
+
+  useEffect(() => {
+    if (!token || !selectedWorkspace) return;
+
+    const ws = new WebSocket('ws://localhost:3000');
+
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      setNotifications(prev => [...prev, msg]);
+      if (msg.type === 'article_deleted') {
+        setArticles(prev => prev.filter(a => a.id !== msg.id));
+      } else if (msg.article?.workspaceId === selectedWorkspace) {
+        fetchArticles();
+      }
+    };
+
+    ws.onerror = (err) => console.error('WebSocket error');
+
+    return () => {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    };
+  }, [token, selectedWorkspace, fetchArticles]);
 
   const handleSelectArticle = async (article) => {
     setLoading(true);
@@ -73,8 +138,6 @@ const MainAppContent = () => {
 
   const handleFormSubmit = (updated) => {
     setEditingArticle(null);
-
-
     const fullUpdatedArticle = {
       ...updated,
       authorId: updated.authorId || selectedArticle?.authorId
@@ -90,7 +153,6 @@ const MainAppContent = () => {
           ? prev.map(a => a.id === fullUpdatedArticle.id ? fullUpdatedArticle : a)
           : [...prev, fullUpdatedArticle];
       });
-
       if (selectedArticle?.id === fullUpdatedArticle.id) {
         setSelectedArticle(fullUpdatedArticle);
       }
@@ -114,41 +176,6 @@ const MainAppContent = () => {
     }
   };
 
-  useEffect(() => {
-    if (!token) return;
-    const ws = new WebSocket('ws://localhost:3000');
-    ws.onmessage = e => {
-      const msg = JSON.parse(e.data);
-      setNotifications(prev => [...prev, msg]);
-      if (msg.type === 'article_deleted') setArticles(prev => prev.filter(a => a.id !== msg.id));
-      else if (msg.article?.workspaceId === selectedWorkspace) fetchArticles();
-      else setArticles(prev => prev.filter(a => a.id !== msg.article?.id));
-    };
-    return () => ws.close();
-  }, [selectedWorkspace, token]);
-
-
-  const handleLogout = () => {
-
-    setView('articles');
-    setSelectedArticle(null);
-    setEditingArticle(null);
-    setSelectedWorkspace(null);
-    setArticles([]);
-    setWorkspaces([]);
-    setComments([]);
-    setNotifications([]);
-    setEditingComment(null);
-    logout();
-  };
-
-
-  useEffect(() => {
-    if (token) {
-      setView('articles');
-    }
-  }, [token]);
-
   if (!token) {
     return isRegister
       ? <Register onSwitch={() => setIsRegister(false)} />
@@ -159,9 +186,7 @@ const MainAppContent = () => {
     <div className="app-container">
       <header className="app-header">
         <div className="header-left"></div>
-
         <h1 className="header-title">My Articles</h1>
-
         <div className="header-right">
           <div className="user-info">
             <span className="user-email-label">{user?.email} ({user?.role})</span>
@@ -196,7 +221,7 @@ const MainAppContent = () => {
         <UserManagement />
       ) : !selectedArticle ? (
         <>
-          <ArticleList articles={articles} onSelect={handleSelectArticle} />
+          <ArticleList articles={articles} onSelect={handleSelectArticle} onSearch={handleSearch} />
           <ArticleForm onSubmit={handleFormSubmit} workspaceId={selectedWorkspace} workspaces={workspaces} />
         </>
       ) : !editingArticle && (
@@ -249,7 +274,6 @@ const MainAppContent = () => {
     </div>
   );
 };
-
 
 const App = () => (
   <AuthProvider>

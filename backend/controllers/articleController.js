@@ -2,6 +2,7 @@ import { Article } from '../models/article.js';
 import { ArticleVersion } from '../models/articleVersion.js';
 import { Comment } from '../models/comment.js';
 import { broadcastNotification } from '../utils/ws.js';
+import { Op } from 'sequelize';
 
 export const getArticlesByWorkspace = async (req, res) => {
     const { workspaceId } = req.params;
@@ -23,6 +24,48 @@ export const getArticlesByWorkspace = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Ошибка при получении статей' });
+    }
+};
+
+export const searchArticles = async (req, res) => {
+    const { workspaceId } = req.params;
+    const { query } = req.query;
+
+    if (!workspaceId) return res.status(400).json({ message: 'Не указан workspaceId' });
+
+
+    if (!query || query.trim() === '') {
+        return res.json([]);
+    }
+
+    try {
+        const articles = await Article.findAll({
+            where: { workspaceId },
+            include: [{
+                model: ArticleVersion,
+                as: 'currentVersion',
+                where: {
+                    [Op.or]: [
+                        { title: { [Op.iLike]: `%${query}%` } },
+                        { content: { [Op.iLike]: `%${query}%` } }
+                    ]
+                }
+            }]
+        });
+
+        const formattedArticles = articles.map(article => ({
+            id: article.id,
+            workspaceId: article.workspaceId,
+            authorId: article.authorId,
+            title: article.currentVersion?.title || 'Без названия',
+            content: article.currentVersion?.content || 'Без описания',
+            currentVersion: article.currentVersion
+        }));
+
+        return res.json(formattedArticles);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Ошибка при поиске статей' });
     }
 };
 

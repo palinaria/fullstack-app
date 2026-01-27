@@ -1,32 +1,111 @@
+.article-list-container {
+    margin-bottom: 2rem;
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.2);
+}
+
+.clear-button-inline {
+    position: absolute;
+    right: 10px;
+    top: 40%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+}
+
+.clear-button-inline:hover {
+    color: #333;
+}
+
 .article-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    margin-bottom: 30px;
+    gap: 1rem;
+    margin-top: 1rem;
 }
 
 .article-item {
-    border: 1px solid #000;
-    border-radius: 6px;
-    padding: 15px;
+    padding: 1.25rem;
+    border: 1px solid #eee;
+    border-radius: 10px;
     background-color: #fff;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.article-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .article-item h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+    font-size: 1.3rem;
 }
 
 .article-item p {
-    margin: 0 0 15px 0;
+    margin: 0 0 1.25rem 0;
+    color: #5a6772;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.article-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.article-buttons button {
-    padding: 6px 12px;
+.article-item button {
+    padding: 0.6rem 1.2rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
     cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.article-item button:hover {
+    background-color: #0056b3;
+}
+
+.empty {
+    text-align: center;
+    color: #adb5bd;
+    font-size: 1.1rem;
+    padding: 3rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px dashed #dee2e6;
+}
+
+.search-results-info {
+    margin-bottom: 1rem;
+    color: #6c757d;
+    font-size: 0.95rem;
 }
