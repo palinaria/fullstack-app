@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import WorkspaceForm from '../WorkspaceForm/WorkspaceForm.jsx';
 import { useAuth } from '../../../../context/AuthContext.jsx';
+import API_URL from '../../../../apiConfig.js';
 import './WorkspaceManager.css'
 
 const WorkspaceManager = ({ workspaces, selectedWorkspace, onSelect, onChange }) => {
@@ -11,7 +12,7 @@ const WorkspaceManager = ({ workspaces, selectedWorkspace, onSelect, onChange })
     const handleDelete = async (id) => {
         if (!window.confirm('Удалить workspace и все его статьи/комментарии?')) return;
         try {
-            const res = await fetch(`http://localhost:3000/workspaces/${id}`, {
+            const res = await fetch(`${API_URL}/workspaces/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
